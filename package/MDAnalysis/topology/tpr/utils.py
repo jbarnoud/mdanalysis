@@ -355,12 +355,6 @@ def do_iparams(data, functypes, fver):
             data.unpack_real()  # lj14_c12A
             data.unpack_real()  # lj14_c6B
             data.unpack_real()  # lj14_c12B
-        elif i in [S.F_COUL14]:
-            # F_COUL14 is described in src/gromacs/topology/idef.h 
-            # and therefore appears as a constant in settings.py.
-            # Yet, it does not appear in src/gromacs/fileio/tpxio.cpp.
-            # Here we ignore it explicitely.
-            pass
         elif i in [S.F_LJC14_Q]:
             data.unpack_real()  # ljc14.fqq
             data.unpack_real()  # ljc14.qi
