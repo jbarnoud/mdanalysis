@@ -40,8 +40,9 @@ DIM = 3
 NR_RBDIHS = 6  # include/types/idef.h
 egcNR = 10  # include/types/topolog.h
 TPX_TAG_RELEASE = "release"  # <gromacs-5.0.5-dir>/src/gromacs/fileio/tpxio.c
-tpx_version = 83  # <gromacs-4.6.1-dir>/src/gmxlib/tpxio.c
+tpx_version = 103    # <gromacs-5.0.5-dir>/src/gromacs/fileio/tpxio.c
 tpx_generation = 26  # <gromacs-5.0.5-dir>/src/gromacs/fileio/tpxio.c
+tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials = 98
 
 
 #: Function types from ``<gromacs_dir>/include/types/idef.h``
@@ -71,13 +72,15 @@ tpx_generation = 26  # <gromacs-5.0.5-dir>/src/gromacs/fileio/tpxio.c
 
 #: Function types from ``<gromacs_dir>/src/gmxlib/tpxio.c``
 ftupd = [
-    (20, F_CUBICBONDS), (20, F_CONNBONDS), (20, F_HARMONIC),
-    (34, F_FENEBONDS), (43, F_TABBONDS), (43, F_TABBONDSNC),
-    (70, F_RESTRBONDS), (76, F_LINEAR_ANGLES), (30, F_CROSS_BOND_BONDS),
-    (30, F_CROSS_BOND_ANGLES), (30, F_UREY_BRADLEY), (34, F_QUARTIC_ANGLES),
-    (43, F_TABANGLES), (26, F_FOURDIHS), (26, F_PIDIHS),
-    (43, F_TABDIHS), (65, F_CMAP), (60, F_GB12),
-    (61, F_GB13), (61, F_GB14), (72, F_GBPOL),
+    (20, F_CUBICBONDS), (20, F_CONNBONDS), (20, F_HARMONIC), (34, F_FENEBONDS),
+    (43, F_TABBONDS), (43, F_TABBONDSNC), (70, F_RESTRBONDS),
+    (tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_RESTRANGLES),
+    (76, F_LINEAR_ANGLES), (30, F_CROSS_BOND_BONDS), (30, F_CROSS_BOND_ANGLES),
+    (30, F_UREY_BRADLEY), (34, F_QUARTIC_ANGLES), (43, F_TABANGLES),
+    (tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_RESTRDIHS),
+    (tpxv_RestrictedBendingAndCombinedAngleTorsionPotentials, F_CBTDIHS),
+    (26, F_FOURDIHS), (26, F_PIDIHS), (43, F_TABDIHS), (65, F_CMAP),
+    (60, F_GB12), (61, F_GB13), (61, F_GB14), (72, F_GBPOL),
     (72, F_NPSOLVATION), (41, F_LJC14_Q), (41, F_LJC_PAIRS_NB),
     (32, F_BHAM_LR), (32, F_RF_EXCL), (32, F_COUL_RECIP), (93, F_LJ_RECIP),
     (46, F_DPD), (30, F_POLARIZATION), (36, F_THOLE_POL), (90, F_FBPOSRES),
@@ -87,7 +90,7 @@ ftupd = [
     (46, F_ECONSERVED), (69, F_VTEMP_NOLONGERUSED), (66, F_PDISPCORR),
     (54, F_DHDL_CON), (76, F_ANHARM_POL), (79, F_DVDL_COUL),
     (79, F_DVDL_VDW,), (79, F_DVDL_BONDED,), (79, F_DVDL_RESTRAINT),
-    (79, F_DVDL_TEMPERATURE), (54, F_DHDL_CON)
+    (79, F_DVDL_TEMPERATURE),
 ]
 
 #: Interaction types from ``<gromacs_dir>/gmxlib/ifunc.c``
