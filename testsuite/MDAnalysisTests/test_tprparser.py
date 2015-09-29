@@ -203,3 +203,11 @@ class TPR461(TPR46xBase):
 
 class TestTPR461(_TestTopology, TPR461):
     """Testing TPR version 83"""
+
+@dec.slow
+class TPR505(TPRBase):
+    topology = TPR461
+
+
+class TestTPR505(_TestTopology, TPR505):
+    """Testing TPR version 100"""
