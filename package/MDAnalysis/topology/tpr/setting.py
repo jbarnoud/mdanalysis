@@ -39,9 +39,9 @@ BIG_STRLEN = 1048576
 DIM = 3
 NR_RBDIHS = 6  # include/types/idef.h
 egcNR = 10  # include/types/topolog.h
-TPX_TAG_RELEASE = "release"  # <gromacs-4.6.1-dir>/src/gmxlib/tpxio.c
+TPX_TAG_RELEASE = "release"  # <gromacs-5.0.5-dir>/src/gromacs/fileio/tpxio.c
 tpx_version = 83  # <gromacs-4.6.1-dir>/src/gmxlib/tpxio.c
-tpx_generation = 24  # <gromacs-4.6.1-dir>/src/gmxlib/tpxio.c
+tpx_generation = 26  # <gromacs-5.0.5-dir>/src/gromacs/fileio/tpxio.c
 
 
 #: Function types from ``<gromacs_dir>/include/types/idef.h``
