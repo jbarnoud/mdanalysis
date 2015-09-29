@@ -16,7 +16,7 @@
 from MDAnalysis.tests.datafiles import TPR, \
     TPR400, TPR402, TPR403, TPR404, TPR405, TPR406, TPR407, \
     TPR450, TPR451, TPR452, TPR453, TPR454, TPR455, TPR455Double, \
-    TPR460, TPR461
+    TPR460, TPR461, TPR505
 
 from numpy.testing import dec
 from test_topology import _TestTopology
@@ -206,7 +206,7 @@ class TestTPR461(_TestTopology, TPR461):
 
 @dec.slow
 class TPR505(TPRBase):
-    topology = TPR461
+    topology = TPR505
 
 
 class TestTPR505(_TestTopology, TPR505):
