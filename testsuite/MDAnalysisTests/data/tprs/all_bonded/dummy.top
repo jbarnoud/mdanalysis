@@ -29,6 +29,7 @@ TEST 	    	1
 11      TA      1       T       T11     1       0 
 12      TA      1       T       T12     1       0 
 13      TA      1       T       T13     1       0 
+14      TA      1       T       T14     1       0 
 
 [bonds]
 ; i j 	funct 	length 	force.c.
@@ -45,11 +46,14 @@ TEST 	    	1
   7 8   7       0.470   1250        ; FENE bond
 ; i j   funct   low  up1  up2  kdr
   8 9   10      1    2    3    1250 ; restraint potential
+; i  j   funct table.number force.c
+  9 10   8     0            1       ; tabulated
+ 10 11   9     0            1       ; tabulated no exclusion
 
 [constraints]
 ; i  j   funct   length
-  9  10  1       0.470
-  10 11  2       0.470
+  11 12  1       0.470
+  12 13  2       0.470
 
 [angles]
 ;  i     j    k     funct   angle  force.c.
@@ -65,6 +69,8 @@ TEST 	    	1
    6     7    8     6       1     1  1  1  1  1  ; quartic angle
 ;  i     j    k     funct   theta ktheta
    7     8    9     10      1     1          ; restricted bending potential
+;  i     j    k     funct   table.number force.c
+   8     9    10    8       0            1   ; tabulated angle
 
 [dihedrals]
 ; i  j  k  l  funct
@@ -75,6 +81,7 @@ TEST 	    	1
   8  9  10 11 9     1 1 1             ; proper dihedral (multiple)
   9  10 11 12 10    1 1 1 1           ; restricted dihedral
   10 11 12 13 11    1 1 1 1 1 1       ; combined bending-torsion potential
+  11 12 13 14 8     0 1               ; tabulated dihedral
 
 [dihedrals]
 ; i  j  k  l  funct

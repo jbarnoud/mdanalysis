@@ -280,13 +280,21 @@ class TestAllBondedTPR510(TestCase):
         """Test for restraint potentials (RESTRAINTPOT)"""
         self.assertIn((7, 8), self.universe._topology['bonds'])
  
+    def test_tabulated_bond(self):
+        """Test for tabulated bonds (TABBONDS)"""
+        self.assertIn((8, 9), self.universe._topology['bonds'])
+
+    def test_tabulated_bond_nc(self):
+        """Test for tabulated bonds without exclusion (TABBONDSNC)"""
+        self.assertIn((9, 10), self.universe._topology['bonds'])
+
     def test_constraints(self):
         """Test for constraints (CONSTR)"""
-        self.assertIn((8, 9), self.universe._topology['bonds'])
+        self.assertIn((10, 11), self.universe._topology['bonds'])
  
     def test_constraints_nc(self):
         """Test for constraints without connection (CONSTRNC)"""
-        self.assertIn((9, 10), self.universe._topology['bonds'])
+        self.assertIn((11, 12), self.universe._topology['bonds'])
 
     def test_regular_angles(self):
         """Test for regular angles (ANGLES)"""
@@ -315,3 +323,7 @@ class TestAllBondedTPR510(TestCase):
     def test_restricted_bending_potential(self):
         """Test for restricted bending potentials (RESTRANGLES)"""
         self.assertIn((6, 7, 8), self.universe._topology['angles'])
+
+    def test_tabulated_angle(self):
+        """Test for tabulated angle (TABANGLES)"""
+        self.assertIn((7, 8, 9), self.universe._topology['angles'])

@@ -515,6 +515,7 @@ def do_moltype(data, symtab, fver):
 
             # the following if..elif..else statement needs to be updated as new
             # type of interactions become interested
+            print(ik_obj.name)
             if ik_obj.name in ['BONDS', 'G96BONDS', 'MORSE', 'CUBICBONDS',
                                'CONNBONDS', 'HARMONIC', 'FENEBONDS',
                                'RESTRAINTPOT', 'CONSTR', 'CONSTRNC',
@@ -524,11 +525,10 @@ def do_moltype(data, symtab, fver):
                                  'CROSS_BOND_ANGLE', 'UREY_BRADLEY', 'QANGLES',
                                  'RESTRANGLES', 'TABANGLES']:
                 angles += list(ik_obj.process(ias))
-            elif ik_obj.name in ['RBDIHS']:
+            elif ik_obj.name in ['PDIHS', 'RBDIHS', 'RESTRDIHS', 'CBTDIHS',
+                                 'FOURDIHS', 'TABDIHS']:
                 dihs += list(ik_obj.process(ias))
-            elif ik_obj.name in ['PDIHS', 'VSITE3']:
-                # this is possible a bug in gromacs, the so-named Proper Dih is
-                # actually Improper Dih
+            elif ik_obj.name in ['IDIHS', 'PIDIHS']:
                 impr += list(ik_obj.process(ias))
             else:
                 # other interaction types are not interested at the moment
