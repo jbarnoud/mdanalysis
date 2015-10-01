@@ -16,9 +16,9 @@
 from MDAnalysis.tests.datafiles import TPR, \
     TPR400, TPR402, TPR403, TPR404, TPR405, TPR406, TPR407, \
     TPR450, TPR451, TPR452, TPR453, TPR454, TPR455, TPR455Double, \
-    TPR460, TPR461, TPR502, TPR504, TPR505, TPR510
+    TPR460, TPR461, TPR502, TPR504, TPR505, TPR510, TPR510_bonded
 
-from numpy.testing import dec
+from numpy.testing import TestCase, dec
 from test_topology import _TestTopology
 import MDAnalysis.topology.TPRParser
 
@@ -236,3 +236,82 @@ class TPR510(TPRBase):
 
 class TestTPR510(_TestTopology, TPR510):
     """Testing TPR version 103"""
+
+class TestAllBondedTPR510(TestCase):
+    """Test that all bonded interactions are read from a TPR version 103
+    
+    For a list of the interactions, see table 5.5 of the Gromacs PDF reference.
+    """
+    topology = TPR510_bonded
+    
+    def setUp(self):
+        """The topology should be parsed previous to each test"""
+        self.universe = MDAnalysis.Universe(self.topology)
+
+    def test_regular_bond(self):
+        """Test for regular bounds (BONDS)"""
+        self.assertIn((0, 1), self.universe._topology['bonds'])
+
+    def test_G96_bonds(self):
+        """Test for G96 bonds (G96BONDS)"""
+        self.assertIn((1, 2), self.universe._topology['bonds'])
+
+    def test_morse(self):
+        """Test for Morse bonds (MORSE)"""
+        self.assertIn((2, 3), self.universe._topology['bonds'])
+
+    def test_cubic_bonds(self):
+        """Test for cubic bonds (CUBICBONDS)"""
+        self.assertIn((3, 4), self.universe._topology['bonds'])
+
+    def test_connection(self):
+        """Test for connections (CONNBONDS)"""
+        self.assertIn((4, 5), self.universe._topology['bonds'])
+
+    def test_harmonic_potentials(self):
+        """Test for harmonic potentials (HARMONIC)"""
+        self.assertIn((5, 6), self.universe._topology['bonds'])
+
+    def test_fene_bonds(self):
+        """Test for FENE bonds (FENEBONDS)"""
+        self.assertIn((6, 7), self.universe._topology['bonds'])
+
+    def test_restraint_potentials(self):
+        """Test for restraint potentials (RESTRAINTPOT)"""
+        self.assertIn((7, 8), self.universe._topology['bonds'])
+ 
+    def test_constraints(self):
+        """Test for constraints (CONSTR)"""
+        self.assertIn((8, 9), self.universe._topology['bonds'])
+ 
+    def test_constraints_nc(self):
+        """Test for constraints without connection (CONSTRNC)"""
+        self.assertIn((9, 10), self.universe._topology['bonds'])
+
+    def test_regular_angles(self):
+        """Test for regular angles (ANGLES)"""
+        self.assertIn((0, 1, 2), self.universe._topology['angles'])
+
+    def test_G96_angles(self):
+        """Test for G96 angles (G96ANGLES)"""
+        self.assertIn((1, 2, 3), self.universe._topology['angles'])
+
+    def test_cross_bond_bond(self):
+        """Test for cross bond-bond angles (CROSS_BOND_BOND)"""
+        self.assertIn((2, 3, 4), self.universe._topology['angles'])
+
+    def test_cross_bond_angle(self):
+        """Test for cross bond-angle angles (CROSS_BOND_ANGLE)"""
+        self.assertIn((3, 4, 5), self.universe._topology['angles'])
+    
+    def test_urey_bradley(self):
+        """Test for Urey-Bradley (UREY_BRADLEY)"""
+        self.assertIn((4, 5, 6), self.universe._topology['angles'])
+
+    def test_quartic_angles(self):
+        """Test for quartic angles (QANGLES)"""
+        self.assertIn((5, 6, 7), self.universe._topology['angles'])
+
+    def test_restricted_bending_potential(self):
+        """Test for restricted bending potentials (RESTRANGLES)"""
+        self.assertIn((6, 7, 8), self.universe._topology['angles'])
