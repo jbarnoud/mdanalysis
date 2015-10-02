@@ -12,7 +12,7 @@ The rules for this file:
   * accompany each entry with github issue/PR number (Issue #xyz)
 
 ------------------------------------------------------------------------------
-??/??/?? kain88-de, richardjgowers, dotsdl, sseyler
+??/??/?? kain88-de, richardjgowers, dotsdl, sseyler, jbarnoud
 
   * 0.11.1
 
@@ -50,6 +50,8 @@ Fixes
   * Fixed minor issue in lib.mdamath.make_whole where if all bonds
     were correctly sized, it wouldn't notice that multiple fragments
     had been given. (Issue #445)
+  * Fixed TPR topology parser to treat all bonded interactions available in
+    Gromacs 5.1 (Issue #222 and #352, pull request #463).
 
 09/07/15  tyler.je.reddy, richardjgowers, alejob, orbeckst, dotsdl,
         manuel.nuno.melo, cyanezstange, khuston, ivirshup, kain88-de,
