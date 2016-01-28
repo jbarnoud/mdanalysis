@@ -93,7 +93,7 @@ class XDRBaseReader(base.Reader):
             self._read_offsets(store=True)
             return
 
-        with open(fname) as f:
+        with open(fname, 'rb') as f:
             data = {k: v for k, v in six.iteritems(np.load(f))}
 
         ctime_ok = getctime(self.filename) == data['ctime']
@@ -133,7 +133,7 @@ class XDRBaseReader(base.Reader):
         self.ts.frame = 0
         self._frame = -1
         self._xdr.close()
-        self._xdr.open(self.filename, 'r')
+        self._xdr.open(self.filename.encode('utf-8'), 'r')
 
     def _read_frame(self, i):
         """read frame i"""
