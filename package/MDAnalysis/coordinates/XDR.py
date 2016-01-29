@@ -116,8 +116,12 @@ class XDRBaseReader(base.Reader):
                 np.savez(offsets_filename(self.filename),
                          offsets=offsets, size=size, ctime=ctime)
             except Exception as e:
-                warnings.warn("Couldn't save offsets because: {}".format(
-                    e.message))
+                try:
+                    warnings.warn("Couldn't save offsets because: {}".format(
+                        e.message))
+                except AttributeError:
+                    warnings.warn("Couldn't save offsets because: {}".format(e))
+
 
     def rewind(self):
         """Read the first frame again"""
