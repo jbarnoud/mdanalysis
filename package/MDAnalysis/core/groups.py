@@ -65,6 +65,43 @@ def make_classes():
 class GroupBase(object):
     """Base class from which a Universe's Group class is built.
 
+    Instances of :class:`GroupBase` provide the following operations:
+
+    +-------------------------------+------------+----------------------------+
+    | Operation                     | Equivalent | Result                     |
+    +===============================+============+============================+
+    | ``len(s)``                    |            | number of elements (atoms, |
+    |                               |            | residues or segment) in    |
+    |                               |            | the group                  |
+    +-------------------------------+------------+----------------------------+
+    | ``x in s``                    |            | test if ``x`` is part of   |
+    |                               |            | ``s``                      |
+    +-------------------------------+------------+----------------------------+
+    | ``x not in s``                |            | test if ``x`` is non part  |
+    |                               |            | of ``s``                   |
+    +-------------------------------+------------+----------------------------+
+    | ``s.issubset(t)``             |            | test if all elements of    |
+    |                               |            | ``s`` are part of ``t``    |
+    +-------------------------------+------------+----------------------------+
+    | ``s.issuperset(t)``           |            | test if all elements of    |
+    |                               |            | ``t`` are part of ``s``    |
+    +-------------------------------+------------+----------------------------+
+    | ``s.concatenate(t)``          | ``s + t``  | new Group with elements    |
+    |                               |            | from ``s`` and from ``t``  |
+    +-------------------------------+------------+----------------------------+
+    | ``s.union(t)``                | ``s | t``  | new Group with elements    |
+    |                               |            | from both ``s`` and ``t``  |
+    +-------------------------------+------------+----------------------------+
+    | ``s.intersection(t)``         | ``s & t``  | new Group with elements    |
+    |                               |            | common to ``s`` and ``t``  |
+    +-------------------------------+------------+----------------------------+
+    | ``s.difference(t)``           | ``s - t``  | new Group with elements of |
+    |                               |            | ``s`` that are not in ``t``|
+    +-------------------------------+------------+----------------------------+
+    | ``s.symmetric_difference(t)`` | ``s ^ t``  | new Group with elements    |
+    |                               |            | that are part of ``s`` or  |
+    |                               |            | ``t`` but not both         |
+    +-------------------------------+------------+----------------------------+
     """
     def __init__(self, ix, u):
         # indices for the objects I hold
@@ -107,34 +144,26 @@ class GroupBase(object):
         return ("<{}Group with {} {}s>"
                 "".format(name.capitalize(), len(self), name))
 
-    def __add__(self, other):
-        """Concatenate the Group with another Group or Component of the same
-        level.
-
-        Parameters
-        ----------
-        other : Group or Component
-            Group or Component with `other.level` same as `self.level`
-
-        Returns
-        -------
-        Group
-            Group with elements of `self` and `other` concatenated
-        
-        """
+    def _get_other_index(self, other):
         if self.level != other.level:
             raise TypeError("Can't add different level objects")
         if not self._u is other._u:
             raise ValueError("Can't add objects from different Universe")
-        
+
         # for the case where other is a Component, and so other._ix is an
         # integer
-        if isinstance(other._ix, int):
+        if isinstance(other._ix, (int, numpy.integer)):
             o_ix = np.array([other._ix])
         else:
             o_ix = other._ix
 
-        return self.__class__(np.concatenate([self._ix, o_ix]), self._u)
+        return o_ix
+
+    def __add__(self, other):
+       """Concatenate the Group and an other Group or Component of the same
+       level
+       """
+       return self.concatenate(other)
 
     def __contains__(self, other):
         if not other.level == self.level:
@@ -143,6 +172,33 @@ class GroupBase(object):
             return False
         return other.index in self._ix
 
+    def __or__(self, other):
+        """Return the union of this Group and an other Group or Component of
+        the same level
+        """
+        return self.union(other)
+
+    def __and__(self, other):
+        """Return the intersection of this Group and an other Group or
+        Component of the same level
+        """
+        return self.intersection(other)
+
+    def __sub__(self, other):
+        """Return the elements of that Group that are not in an other Group or
+        Component of the same level
+        """
+        return self.difference(other)
+
+    def __xor__(self, other):
+        """Return the elements that are in this Group or in an other Group or
+        Component of the same level, but not in both
+        """
+        return self.symmetric_difference(other)
+
+    @property
+    def universe(self):
+        return self._u
     @property
     def universe(self):
         return self._u
@@ -157,7 +213,153 @@ class GroupBase(object):
 
         """
         return self._ix
-    
+
+    def concatenate(self, other):
+        """Concatenate the Group with another Group or Component of the same
+        level.
+
+        Parameters
+        ----------
+        other : Group or Component
+            Group or Component with `other.level` same as `self.level`
+
+        Returns
+        -------
+        Group
+            Group with elements of `self` and `other` concatenated
+
+        """
+        o_ix = self._get_other_index(other)
+        return self.__class__(np.concatenate([self._ix, o_ix]), self._u)
+
+    def union(self, other):
+        """Return the union of this Group and an other Group or Component of
+        the same level
+
+        On the contrary to concatenation, this method removes duplicate
+        elements.
+
+        Parameters
+        ----------
+        other : Group or Component
+            Group or Component with `other.level` same as `self.level`
+
+        Returns
+        -------
+        Group
+            Group with the combined elements of `self` and `other`, without
+            duplicate elements
+
+        .. versionadded:: 0.15
+        """
+        o_ix = self._get_other_index(other)
+        return self.__class__(np.union1d(self._ix, o_ix), self._u)
+
+    def intersection(self, other):
+        """Return the intersect of this Group and an other Group or Component
+        of the same level
+
+        This method removes duplicate elements.
+
+        Parameters
+        ----------
+        other : Group or Component
+            Group or Component with `other.level` same as `self.level`
+
+        Returns
+        -------
+        Group
+            Group with the common elements of `self` and `other`, without
+            duplicate elements
+
+        .. versionadded:: 0.15
+        """
+        o_ix = self._get_other_index(other)
+        return self.__class__(np.intersect1d(self._ix, o_ix), self._u)
+
+    def difference(self, other):
+        """Return the set difference of this Group and an other Group or
+        Component of the same level
+
+        This method removes duplicate elements.
+
+        Parameters
+        ----------
+        other : Group or Component
+            Group or Component with `other.level` same as `self.level`
+
+        Returns
+        -------
+        Group
+            Group with the elements of `self` that are not in  `other`, without
+            duplicate elements
+
+        .. versionadded:: 0.15
+        """
+        o_ix = self._get_other_index(other)
+        return self.__class__(np.setdiff1d(self._ix, o_ix), self._u)
+
+    def summetric_difference(self, other):
+        """Return the set symmetric difference of this Group and an other Group
+        or Component of the same level
+
+        This method removes duplicate elements.
+
+        Parameters
+        ----------
+        other : Group or Component
+            Group or Component with `other.level` same as `self.level`
+
+        Returns
+        -------
+        Group
+            Group with the elements that are in `self` or in `other` but not in
+            both, without duplicate elements
+
+        .. versionadded:: 0.15
+        """
+        o_ix = self._get_other_index(other)
+        return self.__class__(np.setxor1d(self._ix, o_ix), self._u)
+
+    def issubset(self, other):
+        """Return True if all elements of this Group are part of an other Group
+        of the same level
+
+        Parameters
+        ----------
+        other : Group or Component
+            Group or Component with `other.level` same as `self.level`
+
+        Returns
+        -------
+        Bool
+            True if this Group is a subset of the other one
+
+        .. versionadded:: 0.15
+        """
+        o_ix = set(self._get_other_index(other))
+        s_ix = set(self._ix)
+        return self.__class__(np.array(s_ix.issubset(o_ix)), self._u)
+
+    def issuperset(self, other):
+        """Return True if all elements of an other Group are part of this Group
+
+        Parameters
+        ----------
+        other : Group or Component
+            Group or Component with `other.level` same as `self.level`
+
+        Returns
+        -------
+        Bool
+            True if this Group is a subset of the other one
+
+        .. versionadded:: 0.15
+        """
+        o_ix = set(self._get_other_index(other))
+        s_ix = set(self._ix)
+        return self.__class__(np.array(s_ix.issuperset(o_ix)), self._u)
+
 
 class AtomGroup(object):
     """A group of atoms.
@@ -259,7 +461,7 @@ class AtomGroup(object):
 
         """
         return self._u.segments[np.unique(self.segindices)]
-                                                
+
     @property
     def n_segments(self):
         """Number of unique segments represented in the AtomGroup.
@@ -294,7 +496,7 @@ class AtomGroup(object):
                   from the file
         """
         return self._u.trajectory.ts.positions[self._ix]
-    
+
     @positions.setter
     def positions(self, values):
         ts = self._u.trajectory.ts
@@ -587,7 +789,7 @@ class AtomGroup(object):
         -------
         R : float
             Radius of bounding sphere.
-        center : array 
+        center : array
             Coordinates of sphere center as ``[xcen,ycen,zcen]``.
 
         .. versionadded:: 0.7.3
@@ -933,7 +1135,7 @@ class AtomGroup(object):
         Parameters
         ----------
         level : {'atom', 'residue', 'segment'}
-            
+
         .. versionadded:: 0.9.0
         """
         accessors = {'segment': 'segindices',
@@ -970,7 +1172,7 @@ class ResidueGroup(object):
     def n_atoms(self):
         """Number of atoms represented in ResidueGroup, including duplicate
         residues.
-        
+
         Equivalent to ``len(self.atoms)``.
 
         """
@@ -997,7 +1199,7 @@ class ResidueGroup(object):
 
         """
         return self._u.segments[np.unique(self.segindices)]
-                                                
+
     @property
     def n_segments(self):
         """Number of unique segments represented in the ResidueGroup.
@@ -1121,7 +1323,7 @@ class SegmentGroup(object):
 
     @property
     def atoms(self):
-        """Get an AtomGroup of atoms represented in this SegmentGroup. 
+        """Get an AtomGroup of atoms represented in this SegmentGroup.
 
         The atoms are ordered locally by residue, which are further ordered by
         segment in the SegmentGroup. No duplicates are removed.
@@ -1133,7 +1335,7 @@ class SegmentGroup(object):
     def n_atoms(self):
         """Number of atoms represented in SegmentGroup, including duplicate
         segments.
-        
+
         Equivalent to ``len(self.atoms)``.
 
         """
@@ -1141,7 +1343,7 @@ class SegmentGroup(object):
 
     @property
     def residues(self):
-        """Get a ResidueGroup of residues represented in this SegmentGroup. 
+        """Get a ResidueGroup of residues represented in this SegmentGroup.
 
         The residues are ordered locally by segment in the SegmentGroup.
         No duplicates are removed.
@@ -1153,7 +1355,7 @@ class SegmentGroup(object):
     def n_residues(self):
         """Number of residues represented in SegmentGroup, including duplicate
         segments.
-        
+
         Equivalent to ``len(self.residues)``.
 
         """
@@ -1165,7 +1367,7 @@ class SegmentGroup(object):
 
         """
         return self._u.segments[self.ix]
-                                                
+
     @property
     def n_segments(self):
         """Number of segments in SegmentGroup. Equivalent to ``len(self)``.
@@ -1222,7 +1424,7 @@ class ComponentBase(object):
         -------
         Group
             Group with elements of `self` and `other` concatenated
-        
+
         """
         if self.level != other.level:
             raise TypeError('Can only add Atoms or AtomGroups (not "{0}")'
@@ -1245,7 +1447,7 @@ class ComponentBase(object):
 
         Arguments
         ---------
-        attr 
+        attr
             TopologyAttr object to add
         """
         getter = lambda self: attr.__getitem__(self)
@@ -1296,8 +1498,8 @@ class Atom(ComponentBase):
     def position(self):
         """Coordinates of the atom.
 
-        The position can be changed by assigning an array of length (3,). 
-        
+        The position can be changed by assigning an array of length (3,).
+
         .. note:: changing the position is not reflected in any files; reading any
                   frame from the trajectory will replace the change with that
                   from the file
@@ -1312,8 +1514,8 @@ class Atom(ComponentBase):
     def velocity(self):
         """Velocity of the atom.
 
-        The velocity can be changed by assigning an array of shape (3,). 
-        
+        The velocity can be changed by assigning an array of shape (3,).
+
         .. note:: changing the velocity is not reflected in any files; reading any
                   frame from the trajectory will replace the change with that
                   from the file
@@ -1340,8 +1542,8 @@ class Atom(ComponentBase):
     def force(self):
         """Force on the atom.
 
-        The force can be changed by assigning an array of shape (3,). 
-        
+        The force can be changed by assigning an array of shape (3,).
+
         .. note:: changing the force is not reflected in any files; reading any
                   frame from the trajectory will replace the change with that
                   from the file
