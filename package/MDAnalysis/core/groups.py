@@ -339,7 +339,7 @@ class GroupBase(object):
         """
         o_ix = set(self._get_other_index(other))
         s_ix = set(self._ix)
-        return self.__class__(np.array(s_ix.issubset(o_ix)), self._u)
+        return s_ix.issubset(o_ix)
 
     def issuperset(self, other):
         """Return True if all elements of an other Group are part of this Group
@@ -358,7 +358,7 @@ class GroupBase(object):
         """
         o_ix = set(self._get_other_index(other))
         s_ix = set(self._ix)
-        return self.__class__(np.array(s_ix.issuperset(o_ix)), self._u)
+        return s_ix.issuperset(o_ix)
 
 
 class AtomGroup(object):
