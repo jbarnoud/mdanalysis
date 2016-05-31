@@ -17,7 +17,7 @@ class XVGReader:
         self.rep_method = method
         self.step = 0
 
-        self.read_next_step() # read to ts of trajectory aux is being added to?
+        self.read_next_step() # TODO read to ts of trajectory aux is being added to
         
     def __iter__(self):
         self.reopen()
@@ -37,10 +37,13 @@ class XVGReader:
 
         if line:
             # xvg has both comments '#' and grace instructions '@'
-            while line[0] in ['#', '@']:
+            while line.lstrip()[0] in ['#', '@']:
                 line = self.xvgfile.readline()
-            self.time = float(line.split()[0])
-            self.step_data = [float(i) for i in line.split()[1:]]
+            # TODO what about empty lines in header?
+            # remove end of line comments
+            line_no_comment = line.split('#')[0]
+            self.time = float(line_no_comment.split()[0])
+            self.step_data = [float(i) for i in line_no_comment.split()[1:]]
             # TODO check number of columns is as expected...
             self.step = self.step + 1
             return self.step_data
@@ -61,6 +64,10 @@ class XVGReader:
         self.xvgfile.close()  
         self.xvgfile = open(self.xvgfilename) 
         self.step = 0
+        self.time = 0 # TODO make property like traj readers
+
+    def rewind(self):
+        self.reopen()
         self.read_next_step()
         
     def read_next_ts(self, ts):
@@ -84,3 +91,11 @@ class XVGReader:
             
         #ts.aux.__dict__['self.name'] = value   # add aux to ts!
         return value
+
+    def close(self):
+        if self.xvgfile == None:
+            return
+        self.xvgfile.close()
+        self.xvgfile = None
+
+    # TODO - add __enter__ and __exit__ methods
