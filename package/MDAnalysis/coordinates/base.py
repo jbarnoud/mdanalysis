@@ -137,6 +137,11 @@ from ..lib.util import asiterable
 from . import core
 from .. import NoDataError
 
+class Namespace(object):
+    # set up a basic class so we can make an 'aux' namespace in Timestep 
+    # for auxiliary data; might be better defined elsewhere...?
+    # There's probably a better way to do this
+    pass
 
 class Timestep(object):
     """Timestep data for one frame
@@ -216,6 +221,9 @@ class Timestep(object):
         self.has_forces = kwargs.get('forces', False)
 
         self._unitcell = self._init_unitcell()
+        
+        # set up aux namespace for adding auxiliary data
+        self.aux = Namespace()
 
     @classmethod
     def from_timestep(cls, other, **kwargs):
