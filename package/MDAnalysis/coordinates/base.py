@@ -137,6 +137,8 @@ from ..lib.util import asiterable
 from . import core
 from .. import NoDataError
 
+from .. import auxiliary  # ?
+
 class Namespace(object):
     # set up a basic class so we can make an 'aux' namespace in Timestep 
     # for auxiliary data; might be better defined elsewhere...?
@@ -1290,8 +1292,29 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
                     nframes=self.n_frames,
                     natoms=self.n_atoms
                 ))
+                
+    def add_auxiliary(self, auxdname, auxdata, **kwargs):
+        # TODO !! Make _auxs attribute
+        if auxname in self._auxs:
+            raise ValueError("Auxiliary data with name {name} already "
+                             "exists".format(name=auxname))
+        if isinstance(auxdata, auxiliary.base.AuxReader):
+            auxreader = auxdata
+        else:
+            pass # TODO: implement guess_reader
+            # auxreader = guess_reader(auxname, auxdata, **kwargs)
+        self._auxs['auxname'] = auxreader
+        # TODO - move aux step to match trajectory ts
+    
+    def remove_auxiliary(self, auxname):
+        if auxname in self._auxs:
+            self._auxs[auxname].close()
+            del self._auxs[auxname]
+            # TODO: remove auxs in ts
+        else:
+            raise ValueError("No auxiliary named {name}".format(name=auxname))
 
-
+        
 class Reader(ProtoReader):
     """Base class for trajectory readers that extends :class:`ProtoReader` with a
     :meth:`__del__` method.
