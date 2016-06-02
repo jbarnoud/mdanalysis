@@ -1293,16 +1293,21 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
                     natoms=self.n_atoms
                 ))
                 
-    def add_auxiliary(self, auxdname, auxdata, **kwargs):
-        # TODO !! Make _auxs attribute
-        if auxname in self._auxs:
+    def add_auxiliary(self, auxname, auxdata, **kwargs):
+        ## make _auxs if it doesn't already exist; should probably set up elsewhere
+        try:
+            auxnames = self._auxs.keys()
+        except AttributeError:
+            self._auxs = {}
+
+        if auxname in self.aux_list:
             raise ValueError("Auxiliary data with name {name} already "
                              "exists".format(name=auxname))
         if isinstance(auxdata, auxiliary.base.AuxReader):
             auxreader = auxdata
         else:
-            pass # TODO: implement guess_reader
-            # auxreader = guess_reader(auxname, auxdata, **kwargs)
+            # TODO: implement guess_reader; default to XVGReader for now
+           auxreader = auxiliary.base.XVGReader(auxna,e, auxdata, **kwards)
         self._auxs['auxname'] = auxreader
         # TODO - move aux step to match trajectory ts
     
@@ -1313,7 +1318,15 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
             # TODO: remove auxs in ts
         else:
             raise ValueError("No auxiliary named {name}".format(name=auxname))
-
+            
+    @property
+    def aux_list(self):
+        """ List of the names of added auxiliary data """
+        ## _auxs may not be set up yet...
+        try:
+            return self._auxs.keys()
+        except AttributeError:
+            return []
         
 class Reader(ProtoReader):
     """Base class for trajectory readers that extends :class:`ProtoReader` with a
