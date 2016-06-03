@@ -10,7 +10,7 @@ class XVGReader(base.AuxFileReader):
     def __init__(self, filename, auxname, **kwargs):
         super(XVGReader, self).__init__(filename, auxname, **kwargs)
 
-        self.read_next_step() # TODO read to ts of trajectory aux is being added to
+        self.read_next_step()
         
     def read_next_step(self):
         """ Read next recorded timepoint in xvg file """
@@ -43,6 +43,8 @@ class XVGReader(base.AuxFileReader):
         self.reset_ts(ts)
         while self.step_in_ts(ts):
             self.add_step_to_ts(ts)
+            self.read_next_step()
+            ## TODO - catch StopIteration error reach end of auxfile
         self.ts_rep = self.calc_representative()
         ts.aux.__dict__[self.auxname] = self.ts_rep
         return self.ts_rep
@@ -66,16 +68,23 @@ class XVGReader(base.AuxFileReader):
         else:
             self.ts_data = np.append(self.ts_data, [self.step_data], axis=0)
         self.ts_diffs.append(abs(self.time - ts.time))
-        self.read_next_step()
        
     def calc_representative(self):
-        if len(self.ts_data) == 0:
+        if self.cutoff:
+            ## starting to get nasty, should probably change...
+            cutoff_data = np.array([self.ts_data[i] 
+                                    for i,d in enumerate(self.ts_diffs)
+                                    if d < self.cutoff])
+            cutoff_diffs = [d for d in self.ts_diffs if d < self.cutoff]
+        else:
+            cutoff_data = self.ts_data
+            cutoff_diffs = self.ts_diffs
+        if len(cutoff_data) == 0:
             value = [] # TODO - flag as missing
         elif self.represent_ts_as == 'closest':
-            value = self.ts_data[np.argmin(self.ts_diffs),:]
-            ## TODO - add cutoff
+            value = cutoff_data[np.argmin(cutoff_diffs),:]
         elif self.represent_ts_as == 'average':
-            value = np.mean(self.ts_data, axis=0)
+            value = np.mean(cutoff_data, axis=0)
         return value
 
     def go_to_step(self, i):
