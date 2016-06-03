@@ -1064,6 +1064,10 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
     #: The appropriate Timestep class, e.g.
     #: :class:`MDAnalysis.coordinates.xdrfile.XTC.Timestep` for XTC.
     _Timestep = Timestep
+    
+    def __init__(self):
+        ## adding so can to initialise _auxs; subclasses should now call super
+        self._auxs = {}
 
     def __len__(self):
         return self.n_frames
@@ -1294,12 +1298,6 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
                 ))
                 
     def add_auxiliary(self, auxname, auxdata, **kwargs):
-        ## make _auxs if it doesn't already exist; should probably set up elsewhere
-        try:
-            auxnames = self._auxs.keys()
-        except AttributeError:
-            self._auxs = {}
-
         if auxname in self.aux_list:
             raise ValueError("Auxiliary data with name {name} already "
                              "exists".format(name=auxname))
@@ -1307,26 +1305,23 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
             auxreader = auxdata
         else:
             # TODO: implement guess_reader; default to XVGReader for now
-           auxreader = auxiliary.base.XVGReader(auxna,e, auxdata, **kwards)
+           auxreader = auxiliary.base.XVGReader(auxname, auxdata, **kwargs)
         self._auxs['auxname'] = auxreader
         # TODO - move aux step to match trajectory ts
     
     def remove_auxiliary(self, auxname):
-        if auxname in self._auxs:
-            self._auxs[auxname].close()
+        if auxname in self.aux_list:
+            self._auxs[auxname].close()            
             del self._auxs[auxname]
-            # TODO: remove auxs in ts
+            # TODO: remove auxs in ts - will need to pass ts?
         else:
             raise ValueError("No auxiliary named {name}".format(name=auxname))
             
     @property
     def aux_list(self):
         """ List of the names of added auxiliary data """
-        ## _auxs may not be set up yet...
-        try:
-            return self._auxs.keys()
-        except AttributeError:
-            return []
+        return self._auxs.keys()
+
         
 class Reader(ProtoReader):
     """Base class for trajectory readers that extends :class:`ProtoReader` with a
@@ -1353,6 +1348,8 @@ class Reader(ProtoReader):
 
     """
     def __init__(self, filename, convert_units=None, **kwargs):
+        super(Reader, self).__init__()
+
         self.filename = filename
 
         if convert_units is None:
@@ -1430,6 +1427,8 @@ class ChainReader(ProtoReader):
         .. versionchanged:: 0.13
            The *delta* keyword was deprecated in favor of using *dt*.
         """
+        super(ChainReader, self).__init__()
+
         if 'delta' in kwargs:
             warnings.warn("Keyword 'delta' is now deprecated "
                           "(from version 0.13); "
@@ -1784,6 +1783,8 @@ class SingleFrameReader(ProtoReader):
     _err = "{0} only contains a single frame"
 
     def __init__(self, filename, convert_units=None, **kwargs):
+        super(SingleFrameReader, self).__init__()
+
         self.filename = filename
         if convert_units is None:
             convert_units = flags['convert_lengths']
