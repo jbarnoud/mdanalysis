@@ -39,15 +39,16 @@ class XVGReader(base.AuxFileReader):
         """ Read and record data from steps closest to *ts*
         Calculate representative value for ts """
         # TODO make sure starts at 'begining' of ts! --> go_to_ts?
-
         self.reset_ts(ts)
         while self.step_in_ts(ts):
+            print '1'
             self.add_step_to_ts(ts)
             self.read_next_step()
+
             ## TODO - catch StopIteration error reach end of auxfile
         self.ts_rep = self.calc_representative()
-        ts.aux.__dict__[self.auxname] = self.ts_rep
-        return self.ts_rep
+        ts.aux.__dict__[self.names] = self.ts_rep
+        return ts
         ## currently means that after reading in a timestep, ts_data and
         ## ts_diffs correspond to that ts but the current step/step_data of 
         ## the auxreader is the first step 'belonging' of the next ts...
@@ -57,7 +58,7 @@ class XVGReader(base.AuxFileReader):
         self.ts_diffs = []
 
     def step_in_ts(self, ts):
-        if (self.time-ts.time) <= ts.dt/2 and (self.time-ts.time) > -ts.dt/2.:
+        if (self.time-ts.time) <= ts.dt/2. and (self.time-ts.time) > -ts.dt/2.:
             return True
         else:
             return False
@@ -99,5 +100,5 @@ class XVGReader(base.AuxFileReader):
         """ Move to the first sequential step corresponding to *ts* """
         self.rewind()
         while not self.step_in_ts(ts):
-            value = self.read_next_step()
-        return value
+            self.read_next_step()
+
