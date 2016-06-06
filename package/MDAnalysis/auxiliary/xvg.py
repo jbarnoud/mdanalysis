@@ -41,7 +41,6 @@ class XVGReader(base.AuxFileReader):
         # TODO make sure starts at 'begining' of ts! --> go_to_ts?
         self.reset_ts(ts)
         while self.step_in_ts(ts):
-            print '1'
             self.add_step_to_ts(ts)
             self.read_next_step()
 
@@ -53,7 +52,7 @@ class XVGReader(base.AuxFileReader):
         ## ts_diffs correspond to that ts but the current step/step_data of 
         ## the auxreader is the first step 'belonging' of the next ts...
 
-    def reset_ts(self, ts):
+    def reset_ts(self):
         self.ts_data = np.array([])
         self.ts_diffs = []
 
@@ -97,8 +96,9 @@ class XVGReader(base.AuxFileReader):
         return value
         
     def go_to_ts(self, ts):
-        """ Move to the first sequential step corresponding to *ts* """
+        """ Move to and read auxilairy steps corresponding to *ts* """
         self.rewind()
         while not self.step_in_ts(ts):
             self.read_next_step()
-
+        ts = self.read_next_ts(ts)
+        return ts
