@@ -38,16 +38,18 @@ class XVGReader(base.AuxFileReader):
     def read_next_ts(self, ts):
         """ Read and record data from steps closest to *ts*
         Calculate representative value for ts """
-        # TODO make sure starts at 'begining' of ts! --> go_to_ts?
-        self.reset_ts(ts)
-        while self.step_in_ts(ts):
-            self.add_step_to_ts(ts)
-            self.read_next_step()
-
+        # Make sure auxiliary and trajectory are still aligned
+        if not self.step_in_ts(ts) or not self.first_in_ts(ts):
+            return self.go_to_ts(ts)
+        else:
+            self.reset_ts()
+            while self.step_in_ts(ts):
+                self.add_step_to_ts(ts)
+                self.read_next_step()
             ## TODO - catch StopIteration error reach end of auxfile
-        self.ts_rep = self.calc_representative()
-        ts.aux.__dict__[self.names] = self.ts_rep
-        return ts
+            self.ts_rep = self.calc_representative()
+            ts.aux.__dict__[self.names] = self.ts_rep
+            return ts
         ## currently means that after reading in a timestep, ts_data and
         ## ts_diffs correspond to that ts but the current step/step_data of 
         ## the auxreader is the first step 'belonging' of the next ts...
@@ -57,7 +59,16 @@ class XVGReader(base.AuxFileReader):
         self.ts_diffs = []
 
     def step_in_ts(self, ts):
+        """ Check if current step 'belongs' to *ts* """
         if (self.time-ts.time) <= ts.dt/2. and (self.time-ts.time) > -ts.dt/2.:
+            return True
+        else:
+            return False
+
+    def first_in_ts(self, ts):
+        """ Check if current step is first step belonging to *ts*
+        Assumes auxiliary *dt* is constant """
+        if (self.time-ts.time+ts.dt/2) < self.dt/2:
             return True
         else:
             return False
@@ -100,5 +111,4 @@ class XVGReader(base.AuxFileReader):
         self.rewind()
         while not self.step_in_ts(ts):
             self.read_next_step()
-        ts = self.read_next_ts(ts)
-        return ts
+        return self.read_next_ts(ts)
