@@ -1076,11 +1076,14 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
     def next(self):
         """Forward one step to next frame."""
         try:
-            return self._read_next_timestep()
+            ts = self._read_next_timestep()
         except (EOFError, IOError):
             self.rewind()
             raise StopIteration
-
+        else:
+            for auxname in self.aux_list:
+                ts = self._auxs[auxname].read_next_ts(ts)
+        return ts
 
     def __next__(self):
         """Forward one step to next frame when using the `next` builtin."""
