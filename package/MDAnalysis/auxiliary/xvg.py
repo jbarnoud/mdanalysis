@@ -10,7 +10,6 @@ class XVGReader(base.AuxFileReader):
     def __init__(self, filename, auxname, **kwargs):
         super(XVGReader, self).__init__(filename, auxname, **kwargs)
 
-        self.read_next_step()
         
     def read_next_step(self):
         """ Read next recorded timepoint in xvg file """
@@ -67,7 +66,7 @@ class XVGReader(base.AuxFileReader):
 
     def first_in_ts(self, ts):
         """ Check if current step is first step belonging to *ts*
-        Assumes auxiliary *dt* is constant """
+        Assumes auxiliary *dt* is constant! """
         if (self.time-ts.time+ts.dt/2) < self.dt/2:
             return True
         else:

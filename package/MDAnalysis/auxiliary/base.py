@@ -8,9 +8,8 @@ class AuxReader(object):
     # TODO deal with changing/different units
 
     def __init__(self, auxdata, auxnames, represent_ts_as='closest', 
-                 cutoff=None, dt=None, time_first_col=False, **kwargs):
+                 cutoff=None, dt=None, time_first_col=False, initial_time=None):
         # TODO ? default auxnames; allow to name each column + pick which to keep
-        # TODO pass in initial_time for when time not in data
 
         self.names = auxnames
         self.represent_ts_as = represent_ts_as
@@ -22,15 +21,27 @@ class AuxReader(object):
         self.ts_data = None
         self.ts_rep = None
 
-        if dt:
-            self.dt = dt
-        elif time_first_col:
-            # TODO set dt as diff between first two entries;
-            # assumes dt is constant
-        else:
-            # TODO raise error - error must provide dt
-        
+        self.read_next_step()
 
+        # set initial time; default to 0
+        if time_first_col:
+            init_t = self.time
+        elif initial_time:
+            init_t = intial_time
+        else:
+            init_t = 0 # TODO - warn using default?
+        self.initial_time = init_t
+
+        # set dt (assuming constant!); default to 1 ps.
+        if time_first_col:
+            self.read_next_step()
+            dt = self.time - self.initial_time
+        elif dt:
+            self.dt = dt
+        else:
+            init_t = 1 # TODO - warn using default; (check units!)
+        self.dt = dt
+        
 
     def __iter__(self):
         self.reopen() ## ...if array...?
