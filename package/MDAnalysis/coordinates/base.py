@@ -1306,7 +1306,7 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
             auxreader = auxdata
         else:
             # TODO: implement guess_reader; default to XVGReader for now
-           auxreader = XVGReader(auxdata, auxname, **kwargs)
+           auxreader = XVGReader(auxname, auxdata, **kwargs)
         self._auxs[auxname] = auxreader
         self.ts = auxreader.go_to_ts(self.ts)
     
