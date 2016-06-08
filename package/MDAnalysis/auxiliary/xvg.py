@@ -12,6 +12,8 @@ class XVGReader(base.AuxFileReader):
  
     def __init__(self, auxname, filename, **kwargs):
         super(XVGReader, self).__init__(auxname, time_first_col=True, **kwargs)
+
+        self.n_steps
         ## should generalise in case time not first column...
         
     def _read_next_step(self):
@@ -42,9 +44,27 @@ class XVGReader(base.AuxFileReader):
     def go_to_step(self, i):
         """ Move to and read i-th step """
         ## probably not the best way to do this - seek?
+        if not isintance(i, int):
+            raise TypeError("Step number must be integer")
+        if i > self.n_steps:
+            raise ValueError("{0} is out of range range of auxiliary"
+                             "(num. steps {1}!").format(i, self.n_steps))
+        if i < 1:
+            raise ValueError("Step numbering begins at 1")
+
         self.go_to_first_step()
         while self.step != i:
             value = self._read_next_step()
         return value
-        
+
+    @property        
+    def n_steps(self):
+        try:
+            return self._n_steps  
+        except AttributeError:
+            self._restart()
+            self._n_steps = len([l for l in self.auxfile 
+                                 if l.split()[0][0] not in ['#', '@'])
+            return self._n_steps
+
 
