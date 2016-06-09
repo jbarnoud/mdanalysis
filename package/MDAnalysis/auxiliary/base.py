@@ -56,7 +56,7 @@ class AuxReader(object):
     def go_to_first_step(self):
         """ Return to and read first step """
         ## May need to overwrite, depending e.g. how header dealt with
-        ## Could also use go_to_step(1) ...
+        ## Could also use go_to_step(0) ...
         self._restart()
         self._read_next_step()
                 
@@ -69,7 +69,7 @@ class AuxReader(object):
         """ Read and record data from steps closest to *ts*, then 
         calculate representative value for ts """
         # Make sure auxiliary and trajectory are still aligned
-        #if ts.frame != 0 and not self.first_in_ts(ts):
+        #if not self.first_in_ts(ts):
          #   return self.go_to_ts(ts)
              ## TODO - this doesn't work when no aux for that step!!
 
@@ -150,7 +150,7 @@ class AuxReader(object):
         if self.time_col is not None:
             return self._data[self.time_col]
         else:
-            return (self.step - 1) * self.dt + self.initial_time
+            return self.step * self.dt + self.initial_time
         ## warn/error if wrong number of columns?
 
     @property

@@ -42,10 +42,10 @@ class XVGReader(base.AuxFileReader):
         ## probably not the best way to do this - seek?
         if not isintance(i, int):
             raise TypeError("Step number must be integer")
-        if i > self.n_steps:
+        if i >= self.n_steps:
             raise ValueError("{0} is out of range range of auxiliary"
                              "(num. steps {1}!".format(i, self.n_steps))
-        if i < 1:
+        if i < 0:
             raise ValueError("Step numbering begins at 1")
 
         self.go_to_first_step()
