@@ -8,41 +8,31 @@ class AuxReader(object):
       
     # TODO deal with changing/different units
 
-    def __init__(self, auxnames, represent_ts_as='closest', 
-                 cutoff=None, dt=None, time_first_col=False, initial_time=None):
-        # TODO default auxnames; allow to name each column + pick which to keep
+    def __init__(self, auxnames, represent_ts_as='closest', cutoff=None, 
+                 dt=None, initial_time=None, time_col=None, data_cols=None):
 
         self.names = auxnames
         self.represent_ts_as = represent_ts_as
         self.cutoff = cutoff ## UNITS?
-        self.time_first_col = time_first_col  ## what if time in another column?
 
         self.ts_data = None
         self.ts_rep = None
 
-        self.step = 0
-        self._read_next_step()
+        self._initial_time = initial_time
+        self._dt = dt
 
-        # set initial time; default to 0
-        if time_first_col:
-            init_t = self.time
-        elif initial_time:
-            init_t = intial_time
-        else:
-            init_t = 0 # TODO - warn using default?
-        self.initial_time = init_t
+        if time_col >= self.n_cols:
+            raise ValueError("Index {0} for time column out of range (num. "
+                             "cols is {1})".format(time_col, self.n_cols)
+        self.time_col = time_col
 
-        # set dt (assuming constant!); default to 1 ps.
-        if time_first_col:
-            self._read_next_step()
-            dt = self.time - self.initial_time
-            self.go_to_first_step()
-        elif dt:
-            self.dt = dt
-        else:
-            init_t = 1 # TODO - warn using default; (check units!)
-        self.dt = dt
-        
+        for col in data_cols:
+            if col >= self.n_cols:
+                raise ValueError("Index {0} for data column out of range (num."
+                                 " cols is {1})".format(col, self.n_cols)
+        self.data_cols = data_cols
+
+        self.go_to_first_step()
 
     def next(self):
         """ Move to next step of data """
@@ -127,7 +117,6 @@ class AuxReader(object):
 
     def calc_representative(self):
         if self.cutoff:
-            ## starting to get nasty, should probably change...
             cutoff_data = np.array([self.ts_data[i] 
                                     for i,d in enumerate(self.ts_diffs)
                                     if d < self.cutoff])
@@ -154,10 +143,51 @@ class AuxReader(object):
         As read from the auxiliary data, if present; otherwise calcuated
         as (step - 1) * dt + initial_time
         """
-        try:
-            return self._time
-        except AttributeError:
+        if self.time_col not None:
+            return self._data[time_col]
+        else:
             return (self.step - 1) * self.dt + self.initial_time
+
+    @property
+    def step_data(self):
+        return [self._data[i] for i in self.data_cols]
+
+    @property
+    def n_frames(self):
+        try:
+            return self._n_frames
+        except AttributeError:
+            self.get_info_from_data()
+            return self._n_frames
+
+    @property
+    def n_cols(self):
+        try:
+            return self._n_cols
+        except AttributeError:
+            self.get_info_from_data()
+            return self._n_cols
+
+    @property
+    def dt(self):
+        if self._dt:
+            return self._dt
+        elif time_col is not None:
+            self.get_info_from_data()
+            return self._dt
+        else:
+            return 1  ## default to 1ps; WARN?
+
+    @property
+    def initial_time(self):
+        if self._initial_time:
+            return self._initial_time
+        elif time_col is not None:
+            self.get_info_from_data()
+            retunr self._initial_time
+        else:
+            return 0 ## default to 0; WARN?      
+
 
     # TODO - add __enter__ and __exit__ methods when reading from file
 

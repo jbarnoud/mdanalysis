@@ -11,10 +11,8 @@ class XVGReader(base.AuxFileReader):
     """
  
     def __init__(self, auxname, filename, **kwargs):
-        super(XVGReader, self).__init__(auxname, time_first_col=True, **kwargs)
+        super(XVGReader, self).__init__(auxname, time_col=0, **kwargs)
 
-        self.n_steps
-        ## should generalise in case time not first column...
         
     def _read_next_step(self):
         """ Read next recorded timepoint in xvg file """
@@ -25,9 +23,9 @@ class XVGReader(base.AuxFileReader):
                 line = self.auxfile.readline()
             # remove end of line comments
             line_no_comment = line.split('#')[0]
-            self._time = float(line_no_comment.split()[0])
-            self.step_data = [float(i) for i in line_no_comment.split()[1:]]
-            # TODO check number of columns is as expected...
+            self._data = [float(i) for i in line_no_comment.split()]
+            if len(self._data) != self.n_cols:
+                pass ## TODO - error?
             self.step = self.step + 1
             return self.step_data
         else:
@@ -57,14 +55,21 @@ class XVGReader(base.AuxFileReader):
             value = self._read_next_step()
         return value
 
-    @property        
-    def n_steps(self):
-        try:
-            return self._n_steps  
-        except AttributeError:
-            self._restart()
-            self._n_steps = len([l for l in self.auxfile 
-                                 if l.split()[0][0] not in ['#', '@'])
-            return self._n_steps
-
+    def get_info_from_data(self):
+        self._restart()
+        self._read_next_step()
+        if self.time_col is not None:
+            self._initial_time = self.time
+        self._n_cols = len(self._data)
+        self._read_next_step()
+        if self.time_col is not None:
+            self._dt = self.time - self._initial_time
+        i = 2
+        while True:
+            try:
+                self._read_next_step()
+                i = i + 1
+            except StopIteration:
+                break
+        self._n_steps = i
 
