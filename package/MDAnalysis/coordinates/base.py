@@ -1228,7 +1228,7 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
         ts = self._read_frame(frame)
         for aux in self.aux_list:
             ts = self._auxs[aux].go_to_ts(ts)
-
+        return ts
 
     def _sliced_iter(self, start, stop, step):
         """Generator for slicing a trajectory.
