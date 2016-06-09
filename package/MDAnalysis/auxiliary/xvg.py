@@ -5,17 +5,15 @@ class XVGReader(base.AuxFileReader):
     """ Read data from .xvg file
     
     Assumes data is time-ordered and first column is time
-
-    Currently reading from file; can probably load a once and read through array
-    instead
     """
+    # TODO - swtich to reading file all at once
  
     def __init__(self, auxname, filename, **kwargs):
         super(XVGReader, self).__init__(auxname, filename, time_col=0, **kwargs)
 
         
     def _read_next_step(self):
-        """ Read next recorded timepoint in xvg file """
+        """ Read next recorded step in xvg file """
         line = self.auxfile.readline()
         if line:
             # xvg has both comments '#' and grace instructions '@'
@@ -36,6 +34,7 @@ class XVGReader(base.AuxFileReader):
  
     def go_to_ts(self, ts):
         """ Move to and read auxilairy steps corresponding to *ts* """
+        # only restart if we're currently beyond *ts*
         if self.step_to_frame(self.step, ts) >= ts.frame:
             self._restart()
         while self.step_to_frame(self.step+1, ts) != ts.frame:
@@ -46,10 +45,8 @@ class XVGReader(base.AuxFileReader):
         return self.read_ts(ts)
 
     def go_to_step(self, i):
-        """ Move to and read i-th step """
-        ## probably not the best way to do this - seek?
-        #if not isintance(i, int):
-        #    raise TypeError("Step number must be integer")
+        """ Move to and read i-th auxiliary step """
+        ## could seek instead?
         if i >= self.n_steps:
             raise ValueError("{0} is out of range range of auxiliary"
                              "(num. steps {1}!".format(i, self.n_steps))
@@ -62,7 +59,8 @@ class XVGReader(base.AuxFileReader):
         return value
 
     def count_n_steps(self):
-        # also update times while we're going through; split?
+        """ Read through all steps to count total number of steps.
+        (Also create times list while reading through) """
         self._restart()
         times = []
         count = 0
