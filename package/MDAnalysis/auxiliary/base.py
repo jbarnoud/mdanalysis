@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 class AuxReader(object):
     """ Base class for auxiliary readers
@@ -6,25 +7,36 @@ class AuxReader(object):
     Actual reading/parsing of data to be handled by individual readers.
     """
       
-    # TODO deal with changing/different units
-
     def __init__(self, auxnames, represent_ts_as='closest', cutoff=None, 
-                 dt=None, initial_time=None, time_col=None, data_cols=None, **kwargs):
+                 dt=None, initial_time=None, time_col=None, data_cols=None, 
+                 constant_dt=True, **kwargs):
 
         self.names = auxnames
         self.represent_ts_as = represent_ts_as
         self.cutoff = cutoff ## UNITS?
+        # set initially to avoid error on first read
+        self.n_cols = None
 
         self.ts_data = None
         self.ts_rep = None
 
         self._initial_time = initial_time
         self._dt = dt
+        self.constant_dt=True
 
         self.time_col = time_col
         self.data_cols = data_cols
 
-        self.n_cols
+        self.step = -1
+        self._read_next_step()
+        self.n_cols = len(self._data)
+
+        if self.time_col is not None and self.constant_dt:
+            self._initial_time = self.time
+            self._read_next_step()
+            self._dt = self.time - self._initial_time
+            self.go_to_first_step()
+
         if time_col >= self.n_cols:
             raise ValueError("Index {0} for time column out of range (num. "
                              "cols is {1})".format(time_col, self.n_cols))
@@ -34,7 +46,7 @@ class AuxReader(object):
                     raise ValueError("Index {0} for data column out of range (num."
                                      " cols is {1})".format(col, self.n_cols))
 
-        self.go_to_first_step()
+        # update dt/initial time from data
 
     def next(self):
         """ Move to next step of data """
@@ -51,7 +63,7 @@ class AuxReader(object):
     def _restart(self):
         """ Reset back to start; calling next should read in first step """
         # Overwrite when reading from file to seek to start of file
-        self.step = 0
+        self.step = -1
                 
     def go_to_first_step(self):
         """ Return to and read first step """
@@ -68,40 +80,26 @@ class AuxReader(object):
     def read_ts(self, ts):
         """ Read and record data from steps closest to *ts*, then 
         calculate representative value for ts """
-        # Make sure auxiliary and trajectory are still aligned
-        #if not self.first_in_ts(ts):
-         #   return self.go_to_ts(ts)
-             ## TODO - this doesn't work when no aux for that step!!
+        if not (self.step_to_frame(self.step, ts) < ts.frame
+                and self.step_to_frame(self.step+1, ts) >= ts.frame):
+            return self.go_to_ts(ts)
 
         self.reset_ts()
-        while self.step_in_ts(ts):
+        while self.step_to_frame(self.step+1, ts) == ts.frame:
+            self._read_next_step()
             self.add_step_to_ts(ts.time)
-            try:
-                self._read_next_step()
-            except StopIteration:
-                break
         self.ts_rep = self.calc_representative()
         ts.aux.__dict__[self.names] = self.ts_rep
         return ts
-        ## currently means that after reading in a timestep, ts_data and
-        ## ts_diffs correspond to that ts but the current step/step_data of 
-        ## the auxreader is the first step 'belonging' of the next ts...
+        ## after reading timestep, aux should be a last step in that timestep
+        ## (or last step before that, if no steps in timestep)
 
-    def first_in_ts(self, ts):
-        """ Check if current step is first step 'belonging' to *ts*
-        Assumes auxiliary *dt* is constant! """
-        if (self.time-(ts.time-ts.dt/2)) < self.dt:
-            return True
-        else:
-            return False
+    def step_to_frame(self, step, ts):
+        if step >= self.n_steps or step < 0:
+            return None ## raise error?
+        offset = ts.data.get('time_offset', 0)
+        return math.floor((self.times[step]-offset+ts.dt/2.)/ts.dt)
 
-    def step_in_ts(self, ts):
-        """ Check if current step 'belongs' to *ts* """
-        if (self.time-ts.time) <= ts.dt/2. and (self.time-ts.time) > -ts.dt/2.:
-            return True
-        else:
-            return False
-           
     def go_to_ts(self, ts):
         """ Move to and read auxilairy steps corresponding to *ts* """
         # Need to define in each auxiliary reader
@@ -145,7 +143,7 @@ class AuxReader(object):
     def time(self):
         """ Time in ps of current auxiliary step
         As read from the auxiliary data, if present; otherwise calcuated
-        as (step - 1) * dt + initial_time
+        as step * dt + initial_time
         """
         if self.time_col is not None:
             return self._data[self.time_col]
@@ -163,27 +161,26 @@ class AuxReader(object):
         ## warn/error if wrong number of columns?
 
     @property
-    def n_frames(self):
+    def n_steps(self):
         try:
-            return self._n_frames
+            return self._n_steps
         except AttributeError:
-            self.get_info_from_data()
-            return self._n_frames
+            self._n_steps = self.count_n_steps()
+            return self._n_steps
 
     @property
-    def n_cols(self):
+    def times(self):
+        if self.constant_dt:
+            return [i*self.dt+self.initial_time for i in range(self.n_steps)]
         try:
-            return self._n_cols
+            return self._times
         except AttributeError:
-            self.get_info_from_data()
-            return self._n_cols
+            self._times = self.read_all_times()
+            return self._times
 
     @property
     def dt(self):
         if self._dt:
-            return self._dt
-        elif self.time_col is not None:
-            self.get_info_from_data()
             return self._dt
         else:
             return 1  ## default to 1ps; WARN?
@@ -191,9 +188,6 @@ class AuxReader(object):
     @property
     def initial_time(self):
         if self._initial_time:
-            return self._initial_time
-        elif self.time_col is not None:
-            self.get_info_from_data()
             return self._initial_time
         else:
             return 0 ## default to 0; WARN?      
@@ -222,9 +216,11 @@ class AuxFileReader(AuxReader):
     def _restart(self):
         """ reposition to just before first step """
         self.auxfile.seek(0)
-        self.step = 0
+        self.step = -1
         
     def _reopen(self):
         self.auxfile.close()
         self.auxfile = open(self.auxfilename)
-        self.step = 0
+        self.step = -1
+
+

@@ -23,8 +23,12 @@ class XVGReader(base.AuxFileReader):
                 line = self.auxfile.readline()
             # remove end of line comments
             line_no_comment = line.split('#')[0]
-            self._data = [float(i) for i in line_no_comment.split()]
             self.step = self.step + 1
+            self._data = [float(i) for i in line_no_comment.split()]
+            if self.n_cols and len(self._data) != self.n_cols:
+                raise ValueError('Step {0} has {1} columns instead of '
+                                 '{2}'.format(self.step, len(self._data),
+                                              self.n_cols))
             return self._data
         else:
             self.go_to_first_step()
@@ -32,42 +36,42 @@ class XVGReader(base.AuxFileReader):
  
     def go_to_ts(self, ts):
         """ Move to and read auxilairy steps corresponding to *ts* """
-        self.go_to_first_step()
-        while not self.step_in_ts(ts):
+        if self.step_to_frame(self.step, ts) >= ts.frame:
+            self._restart()
+        while self.step_to_frame(self.step+1, ts) != ts.frame:
+            if self.step == self.n_steps-1:
+                return ts
             self._read_next_step()    
+ 
         return self.read_ts(ts)
 
     def go_to_step(self, i):
         """ Move to and read i-th step """
         ## probably not the best way to do this - seek?
-        if not isintance(i, int):
-            raise TypeError("Step number must be integer")
+        #if not isintance(i, int):
+        #    raise TypeError("Step number must be integer")
         if i >= self.n_steps:
             raise ValueError("{0} is out of range range of auxiliary"
                              "(num. steps {1}!".format(i, self.n_steps))
         if i < 0:
-            raise ValueError("Step numbering begins at 1")
+            raise ValueError("Step numbering begins from 0")
 
         self.go_to_first_step()
         while self.step != i:
             value = self._read_next_step()
         return value
 
-    def get_info_from_data(self):
+    def count_n_steps(self):
+        # also update times while we're going through; split?
         self._restart()
-        self._read_next_step()
-        if self.time_col is not None:
-            self._initial_time = self.time
-        self._n_cols = len(self._data)
-        self._read_next_step()
-        if self.time_col is not None:
-            self._dt = self.time - self._initial_time
-        i = 2
-        while True:
-            try:
-                self._read_next_step()
-                i = i + 1
-            except StopIteration:
-                break
-        self._n_steps = i
+        times = []
+        count = 0
+        for step in self:
+            count = count + 1
+            times.append(self.time)
+        self._times = times
+        return count
+
+    def read_all_times(self):
+        self.count_n_steps()
 
