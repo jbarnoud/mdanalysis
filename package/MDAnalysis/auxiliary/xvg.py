@@ -11,7 +11,7 @@ class XVGReader(base.AuxFileReader):
     """
  
     def __init__(self, auxname, filename, **kwargs):
-        super(XVGReader, self).__init__(auxname, time_col=0, **kwargs)
+        super(XVGReader, self).__init__(auxname, filename, time_col=0, **kwargs)
 
         
     def _read_next_step(self):
@@ -24,10 +24,8 @@ class XVGReader(base.AuxFileReader):
             # remove end of line comments
             line_no_comment = line.split('#')[0]
             self._data = [float(i) for i in line_no_comment.split()]
-            if len(self._data) != self.n_cols:
-                pass ## TODO - error?
             self.step = self.step + 1
-            return self.step_data
+            return self._data
         else:
             self.go_to_first_step()
             raise StopIteration
@@ -36,8 +34,8 @@ class XVGReader(base.AuxFileReader):
         """ Move to and read auxilairy steps corresponding to *ts* """
         self.go_to_first_step()
         while not self.step_in_ts(ts):
-            self._read_next_step()
-        return self.read_next_ts(ts)
+            self._read_next_step()    
+        return self.read_ts(ts)
 
     def go_to_step(self, i):
         """ Move to and read i-th step """
@@ -46,7 +44,7 @@ class XVGReader(base.AuxFileReader):
             raise TypeError("Step number must be integer")
         if i > self.n_steps:
             raise ValueError("{0} is out of range range of auxiliary"
-                             "(num. steps {1}!").format(i, self.n_steps))
+                             "(num. steps {1}!".format(i, self.n_steps))
         if i < 1:
             raise ValueError("Step numbering begins at 1")
 

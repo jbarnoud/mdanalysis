@@ -1082,7 +1082,7 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
             raise StopIteration
         else:
             for auxname in self.aux_list:
-                ts = self._auxs[auxname].read_next_ts(ts)
+                ts = self._auxs[auxname].read_ts(ts)
         return ts
 
     def __next__(self):

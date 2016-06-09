@@ -9,7 +9,7 @@ class AuxReader(object):
     # TODO deal with changing/different units
 
     def __init__(self, auxnames, represent_ts_as='closest', cutoff=None, 
-                 dt=None, initial_time=None, time_col=None, data_cols=None):
+                 dt=None, initial_time=None, time_col=None, data_cols=None, **kwargs):
 
         self.names = auxnames
         self.represent_ts_as = represent_ts_as
@@ -21,16 +21,18 @@ class AuxReader(object):
         self._initial_time = initial_time
         self._dt = dt
 
+        self.time_col = time_col
+        self.data_cols = data_cols
+
+        self.n_cols
         if time_col >= self.n_cols:
             raise ValueError("Index {0} for time column out of range (num. "
-                             "cols is {1})".format(time_col, self.n_cols)
-        self.time_col = time_col
-
-        for col in data_cols:
-            if col >= self.n_cols:
-                raise ValueError("Index {0} for data column out of range (num."
-                                 " cols is {1})".format(col, self.n_cols)
-        self.data_cols = data_cols
+                             "cols is {1})".format(time_col, self.n_cols))
+        if data_cols:
+            for col in data_cols:
+                if col >= self.n_cols:
+                    raise ValueError("Index {0} for data column out of range (num."
+                                     " cols is {1})".format(col, self.n_cols))
 
         self.go_to_first_step()
 
@@ -63,12 +65,14 @@ class AuxReader(object):
         raise NotImplementedError(
             "BUG: Override _read_next_timestep() in auxilairy reader!")
 
-    def read_next_ts(self, ts):
+    def read_ts(self, ts):
         """ Read and record data from steps closest to *ts*, then 
         calculate representative value for ts """
         # Make sure auxiliary and trajectory are still aligned
-        if not self.first_in_ts(ts):
-            return self.go_to_ts(ts)
+        #if ts.frame != 0 and not self.first_in_ts(ts):
+         #   return self.go_to_ts(ts)
+             ## TODO - this doesn't work when no aux for that step!!
+
         self.reset_ts()
         while self.step_in_ts(ts):
             self.add_step_to_ts(ts.time)
@@ -143,14 +147,20 @@ class AuxReader(object):
         As read from the auxiliary data, if present; otherwise calcuated
         as (step - 1) * dt + initial_time
         """
-        if self.time_col not None:
-            return self._data[time_col]
+        if self.time_col is not None:
+            return self._data[self.time_col]
         else:
             return (self.step - 1) * self.dt + self.initial_time
+        ## warn/error if wrong number of columns?
 
     @property
     def step_data(self):
-        return [self._data[i] for i in self.data_cols]
+        if self.data_cols:
+            return [self._data[i] for i in self.data_cols]
+        else:
+            return [self._data[i] for i in range(self.n_cols) 
+                    if i != self.time_col]
+        ## warn/error if wrong number of columns?
 
     @property
     def n_frames(self):
@@ -172,7 +182,7 @@ class AuxReader(object):
     def dt(self):
         if self._dt:
             return self._dt
-        elif time_col is not None:
+        elif self.time_col is not None:
             self.get_info_from_data()
             return self._dt
         else:
@@ -182,9 +192,9 @@ class AuxReader(object):
     def initial_time(self):
         if self._initial_time:
             return self._initial_time
-        elif time_col is not None:
+        elif self.time_col is not None:
             self.get_info_from_data()
-            retunr self._initial_time
+            return self._initial_time
         else:
             return 0 ## default to 0; WARN?      
 
@@ -197,10 +207,10 @@ class AuxFileReader(AuxReader):
     Extends AuxReader with methods particular to reading from file"""
     
     def __init__(self, auxname, filename, **kwargs):
-        super(AuxFileReader, self).__init__(auxname, **kwargs)
-
         self.auxfilename = filename
         self.auxfile = open(filename)
+        
+        super(AuxFileReader, self).__init__(auxname, **kwargs)
 
     def close(self):
         """ close file if open """
@@ -211,7 +221,10 @@ class AuxFileReader(AuxReader):
 
     def _restart(self):
         """ reposition to just before first step """
-        auxfile.seek(0)
+        self.auxfile.seek(0)
         self.step = 0
         
-
+    def _reopen(self):
+        self.auxfile.close()
+        self.auxfile = open(self.auxfilename)
+        self.step = 0
