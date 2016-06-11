@@ -200,7 +200,7 @@ class AuxReader(object):
             cutoff_data = self.ts_data
             cutoff_diffs = self.ts_diffs
         if len(cutoff_data) == 0:
-            value = [] # TODO - flag as missing
+            value = np.array([]) # TODO - flag as missing
         elif self.represent_ts_as == 'closest':
             value = cutoff_data[np.argmin(cutoff_diffs),:]
         elif self.represent_ts_as == 'average':

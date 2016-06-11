@@ -1309,7 +1309,7 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
                     natoms=self.n_atoms
                 ))
                 
-    def add_auxiliary(self, auxdata, auxname, **kwargs):
+    def add_auxiliary(self, auxname, auxdata, **kwargs):
         """Add auxiliary data to be read alongside trajectory and match to 
         current timestep.
 

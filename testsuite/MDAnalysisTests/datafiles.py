@@ -116,11 +116,16 @@ __all__ = [
     "COORDINATES_TOPOLOGY",
     "NUCLsel",
     "GRO_empty_atom", "GRO_missing_atomname", # for testing GROParser exception raise
-    "ENT" #for testing ENT file extension
+    "ENT", #for testing ENT file extension
+    "AUX_XVG", #for testing .xvg auxiliary reader
+    "AUX_XVG_LOWF", "AUX_XVG_HIGHF",
 ]
 
 from pkg_resources import resource_filename
 
+AUX_XVG_LOWF = resource_filename(__name__, 'data/test_lowf.xvg')
+AUX_XVG_HIGHF = resource_filename(__name__, 'data/test_highf.xvg')
+AUX_XVG = resource_filename(__name__, 'data/test.xvg')
 ENT = resource_filename(__name__, 'data/testENT.ent')
 GRO_missing_atomname = resource_filename(__name__, 'data/missing_atomname.gro')
 GRO_empty_atom = resource_filename(__name__, 'data/empty_atom.gro')
