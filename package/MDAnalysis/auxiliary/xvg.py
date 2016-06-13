@@ -2,11 +2,13 @@ import numpy as np
 from . import base
 
 class XVGReader(base.AuxFileReader):
-    """ Read data from .xvg file
+    """ Read data (step at a time) from an .xvg file.
     
-    Assumes data is time-ordered and first column is time
+    Assumes data is time-ordered and first column is time.
     """
     # TODO - swtich to reading file all at once
+
+    format = "XVG"
  
     def __init__(self, auxname, filename, **kwargs):
         super(XVGReader, self).__init__(auxname, filename, time_col=0, **kwargs)
@@ -37,7 +39,7 @@ class XVGReader(base.AuxFileReader):
         # only restart if we're currently beyond *ts*
         if self.step_to_frame(self.step, ts) >= ts.frame:
             self._restart()
-        while self.step_to_frame(self.step+1, ts) != ts.frame:
+        while self.step_to_frame(self.step+1, ts) < ts.frame:
             if self.step == self.n_steps-1:
                 return ts
             self._read_next_step()    

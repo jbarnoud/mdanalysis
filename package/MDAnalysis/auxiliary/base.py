@@ -1,65 +1,117 @@
+"""
+Auxiliary Readers --- :mod:`MDAnalysis.auxiliary.base`
+======================================================
+
+Base classes for deriving all auxiliary data readers.
+
+.. autoclass:: AuxReader
+   :members:
+
+.. autoclass:: AuxFileReader
+   :members:
+
+"""
+
+import six
+
 import numpy as np
 import math
 
-class AuxReader(object):
+from ..lib.util import asiterable
+
+from . import _AUXREADERS
+
+
+class _AuxReaderMeta(type):
+    # auto register on class creation
+    def __init__(cls, name, bases, classdict):
+        type.__init__(type, name, bases, classdict)
+        try:
+            fmt = asiterable(classdict['format'])
+        except KeyError:
+            pass
+        else:
+            for f in fmt:
+                _AUXREADERS[f] = cls
+
+
+class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     """ Base class for auxiliary readers.
 
-    Handles iteration and aligning between trajectory timesteps and auxiliary 
-    step.
+    Allows iteration over a set of data from a trajectory, additional 
+    ('auxiliary') to the regular positions/velocities/etc. This auxiliary 
+    data may be stored in e.g. an array or a separate file.
 
-    Reading/parsing of data should be handled by individual format-specific 
-    readers.
+    Auxiliary data may be added to a trajectory by 
+    :meth:`MDAnalysis.coordinates.base.Reader.add_auxiliary`, passing either an 
+    AuxReader instance or the data/filename, in which case an appropriate reader 
+    will be selected based on type/file extension.
+   
+    The AuxReader will handle alignment of the auxiliary and trajectory 
+    timesteps (auxiliary data steps are 'assigned' to the closest trajectory 
+    timestep), and for each trajectory timestep will provide a 'representative'
+    auxiliary value (or values) based on the steps assigned to that timestep.
 
-    When reading in a trajectory, auxiliary data steps are 'assigned' the 
-    closest trajectory timestep.
+
+    Paramaters
+    ----------
+    name : str
+        Name for auxiliary data. When added to a trajectory, the representative 
+        auxiliary value(s) for the timestep are stored as ``ts.aux.name``.
+    represent_ts_as : {'closest', 'average'}
+        How to calculated representative value of auxiliary data for a 
+        trajectory timestep. Currently available:
+          *'closest': value from step closest to the trajectory timestep
+          *'average': average of values from auxiliary steps assigned to 
+                      the trajectory timestep.
+    cutoff : float, optional
+        Auxiliary steps further from the trajectory timestep than *cutoff* 
+        will be ignored when calculating representative values (the default
+        value is -1, which indicates all auxiliary steps assigned to that 
+        timestep will be used).
+    dt : float, optional
+        Change in time between auxiliary steps (in ps). If not specified, will
+        attempt to be determined from auxiliary data; otherwise defaults to 1ps.
+    initial_time : float, optional 
+        Time of first auxilairy step (in ps). If not specified, will attempt to
+        be determined from auxiliary data; otherwise defaults to 0ps.
+    time_col : int, optional
+        Index of column in auxiliary data storing time (default value ``None``).
+    data_cols : list of str, optional
+        Indices of columns containing data of interest to be stored in 
+        `step_data` (defaults to all columns).
+    constant_dt : bool, optional
+        If true, will use dt/initial_time to calculate time even when time
+        stored in auxiliary data (default value is ``True``).
+
+
 
     Attributes
-    ==========
-      step: 
-        number of the current auxiliary step, starting at 0
-      dt:   
-        change in time between auxiliary steps (ps)
-      initial_time: 
-        time of first auxilairy step (ps)
-      n_cols:
-        number of columns of data for each auxiliary step
-      time_col:
-        index of column in auxiliary data storing time (None if not present)
-      time:  
-        time of current auxiliary step, as read from data (if present) or 
-        calculated using dt and initial_time
-      times:
-        list of time of each step in auxiliary data
-      constant_dt: 
-        if true, will use dt/initial_time to calculate time even when time
-        stored in data
-      data_cols:
-        indicies of columns containing data of interest
-      step_data:
-        values corresponding to data_cols for current step
+    ----------
+    step : int
+        Number of the current auxiliary step, starting at 0.
+    n_steps : int
+        Total number of auxiliary steps
+    n_cols : int
+        Number of columns of data for each auxiliary step.
+    time : float
+        Time of current auxiliary step, as read from data (if present) or 
+        calculated using `dt` and `initial_time`.
+    times : list of float
+        List of the times of each auxiliary step.
+    step_data : ndarray
+        Value(s) from the auxiliary data column(s) of interest (per `data_cols`) 
+        for the current step.
       
-      name: 
-        name for auxilairy data; when added to a trajectory the reader will be
-        stored as trajectory._auxs[name] and representative timestep data as 
-        trajectory.ts.aux 
-      represent_ts_as: 
-        method to calculate representative value of auxiliary data for a 
-        trajectory timestep. Currently available:
-            'closest': value from step closest to the trajectory timestep
-            'average': average of values from auxiliary steps assigned to 
-                       the trajectory timestep
-      cutoff:
-        auxiliary steps further from the trajectory timestep than *cutoff* 
-        will be ignored when calculating representative values
-      ts_data:
-        list of 'step_data' from each auxiliary step assigned to the current
-        trajectory timestep
-      ts_rep:
-        represenatative value of auxiliary data for current trajectory timestep
+    ts_data : ndarray
+        List of 'step_data' from each auxiliary step assigned to the current
+        trajectory timestep.
+    ts_rep : list of float
+        Represenatative value of auxiliary data for current trajectory timestep.
 
     """
       
-    def __init__(self, auxname, represent_ts_as='closest', cutoff=None, 
+    def __init__(self, auxname, represent_ts_as='closest', cutoff=-1, 
                  dt=None, initial_time=None, time_col=None, data_cols=None, 
                  constant_dt=True, **kwargs):
 
@@ -75,7 +127,7 @@ class AuxReader(object):
 
         self._initial_time = initial_time
         self._dt = dt
-        self.constant_dt=True
+        self.constant_dt = constant_dt
         self.time_col = time_col
         self.data_cols = data_cols
 
@@ -89,16 +141,18 @@ class AuxReader(object):
         if data_cols:
             for col in data_cols:
                 if col >= self.n_cols:
-                    raise ValueError("Index {0} for data column out of range (num."
-                                     " cols is {1})".format(col, self.n_cols))
+                    raise ValueError("Index {0} for data column out of range ("
+                                     "num. cols is {1})".format(col,self.n_cols))
 
-        # get dt and initial time from auxiliary data if stores the step time
+        # get dt and initial time from auxiliary data (if time included)
         if self.time_col is not None and self.constant_dt:
             self._initial_time = self.time
             self._read_next_step()
             self._dt = self.time - self._initial_time
             self.go_to_first_step()
 
+    def __len__(self):
+        return self.n_steps
 
     def next(self):
         """ Move to next step of auxiliary data """
@@ -114,7 +168,7 @@ class AuxReader(object):
 
     def _restart(self):
         """ Reset back to start; calling next should read in first step """
-        # Overwrite when reading from file to seek to start of file
+        # Overwrite as appropriate
         self.step = -1
                 
     def go_to_first_step(self):
@@ -130,12 +184,21 @@ class AuxReader(object):
             "BUG: Override _read_next_timestep() in auxilairy reader!")
 
     def read_ts(self, ts):
-        """ Read the auxiliary steps 'assigned' to *ts* (the steps that are
-        within *ts.dt*/2 of of the trajectory timestep/frame - ie. closer to *ts*
-        than either the preceeding or following frame). 
+        """ Read auxiliary data for the *ts*.
 
-        Calculate a 'representative value' for the timestep from the 
-        data in each of these auxiliary steps, and add to *ts*.
+        Read the auxiliary steps 'assigned' to *ts* (the steps that are within
+        *ts.dt*/2 of of the trajectory timestep/frame - ie. closer to *ts*
+        than either the preceeding or following frame). Then calculate a 
+        'representative value' for the timestep from the data in each of these 
+        auxiliary steps, and add to *ts*.
+
+        Note
+        ----
+        The auxiliary reader will end up positioned at the last step assigned
+        to the trajectory frame or, if the frame includes no auxiliary steps,
+        (as when auxiliary data is less frequent), the most recent auxiliary 
+        step before the frame.
+
         """
         # Make sure our auxiliary step starts at the right point (just before
         # the frame being read): the current step should be assigned to a 
@@ -153,17 +216,13 @@ class AuxReader(object):
         ts.aux.__dict__[self.name] = self.ts_rep
         return ts
 
-        # the auxiliary reader should end up positioned at the last step asigned
-        # to the trajectory frame (or, if the frame includes no auxiliary steps,
-        # (as when auxiliary data is less frequent), the most recent auxiliary 
-        # step before the frame)
-
 
     def step_to_frame(self, step, ts):
-        """ Calculate the frame number that auxiliary step number *step* is 
-        assigned to, given dt and offset from *ts*
-        (An auxiliary step is assigned to the frame it is closest in time
-        to - ) """
+        """ Calculate closest trajectory frame for auxiliary step *step*.
+
+        Calculated given dt and offset from *ts* as::
+            math.floor((self.times[step]-offset+ts.dt/2.)/ts.dt)
+        """
         if step >= self.n_steps or step < 0:
             ## make sure step is in the valid range. Raise error?
             return None 
@@ -174,7 +233,7 @@ class AuxReader(object):
         """ Move to and read auxiliary steps corresponding to *ts* """
         # Need to define in each auxiliary reader
         raise NotImplementedError(
-            "BUG: Override go_to_ts() in auxilairy reader!")
+            "BUG: Override go_to_ts() in auxiliary reader!")
 
     def reset_ts(self):
         self.ts_data = np.array([])
@@ -189,9 +248,24 @@ class AuxReader(object):
         self.ts_diffs.append(abs(self.time - ts_time))
 
     def calc_representative(self):
-        """ Calculate a represenatative value from the calues stored in 
-        *ts_data* """
-        if self.cutoff:
+        """ Calculate a represenatative auxiliary value(s).
+        
+        Currently available options for calculating represenatative value are
+          *'closest': default; the value(s) from the step closest to in time to 
+           the trajectory timestep
+          *'average': average of the value(s) from steps 'assigned' to the 
+           trajectory timestep. 
+        Additionally, if a `cutoff` is specified, only steps within this time 
+        of the trajectory timestep are considered in calculating the 
+        represenatative.
+
+        Returns
+        -------
+        List (of length n_cols) of auxiliary value(s) 'representing' the 
+        timestep.
+        """
+
+        if self.cutoff != -1:
             cutoff_data = np.array([self.ts_data[i] 
                                     for i,d in enumerate(self.ts_diffs)
                                     if d < self.cutoff])
@@ -207,15 +281,23 @@ class AuxReader(object):
             value = np.mean(cutoff_data, axis=0)
         return value
     
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
+
     def close(self):
-        # Overwrite when reading from file to close open file
-        pass    
+        # Overwrite as appropriate
+        pass
 
     @property
     def time(self):
         """ Time in ps of current auxiliary step.
+
         As read from the appropriate column of the auxiliary data, if present; 
-        otherwise calcuated as step * dt + initial_time
+        otherwise calcuated as ``step * dt + initial_time``
         """
         if self.time_col is not None:
             return self._data[self.time_col]
@@ -225,7 +307,10 @@ class AuxReader(object):
     @property
     def step_data(self):
         """ Auxiliary values of interest for the current step.
-        As taken from the appropriate columns of the full data list *_data*. """
+
+        As taken from the appropariate columns (identified in `data_cols`) of 
+        the full auxiliary data read in for the current step.
+        """
         if self.data_cols:
             return [self._data[i] for i in self.data_cols]
         else:
@@ -244,8 +329,10 @@ class AuxReader(object):
     @property
     def times(self):
         """ List of times of each step in the auxiliary data. 
-        Calculated using dt and initial_time if constant_dt is true; otherwise
-        as read from each step in turn. """
+
+        Calculated using `dt` and `initial_time` if `constant_dt` is True; 
+        otherwise as read from each auxiliary step in turn. 
+        """
           
         try:
             return self._times
@@ -259,8 +346,9 @@ class AuxReader(object):
 
     @property
     def dt(self):
-        """ Change in time between steps. Defaults to 1 ps if not provided/
-        read from auxiliary data """
+        """ Change in time between steps. 
+
+        Defaults to 1ps if not provided or read from auxiliary data. """
         if self._dt:
             return self._dt
         else:
@@ -268,20 +356,22 @@ class AuxReader(object):
 
     @property
     def initial_time(self):
-        """ Time corresponding to first auxiliary step. Defaults to 0 ps if 
-        not provided/read from auxilairy data """
+        """ Time corresponding to first auxiliary step. 
+
+        Defaults to 0ps if not provided or read from auxilairy data. """
         if self._initial_time:
             return self._initial_time
         else:
             return 0 ## default to 0; WARN?      
 
 
-    # TODO - add __enter__ and __exit__ methods when reading from file
-
     
 class AuxFileReader(AuxReader):
-    """ Base class for auxiliary readers that read from file 
-    Extends AuxReader with methods particular to reading from file"""
+    """ Base class for auxiliary readers that read from file.
+
+    Extends AuxReader with methods particular to reading each step in turn
+    from a file.
+    """
     
     def __init__(self, auxname, filename, **kwargs):
         self.auxfilename = filename
@@ -290,14 +380,14 @@ class AuxFileReader(AuxReader):
         super(AuxFileReader, self).__init__(auxname, **kwargs)
 
     def close(self):
-        """ close file if open """
+        """ Close auxfile, if open """
         if self.auxfile == None:
             return
         self.auxfile.close()
         self.auxfile = None
 
     def _restart(self):
-        """ reposition to just before first step """
+        """ Reposition to just before first step """
         self.auxfile.seek(0)
         self.step = -1
         
@@ -305,5 +395,3 @@ class AuxFileReader(AuxReader):
         self.auxfile.close()
         self.auxfile = open(self.auxfilename)
         self.step = -1
-
-
