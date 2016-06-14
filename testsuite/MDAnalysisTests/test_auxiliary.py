@@ -35,7 +35,12 @@ class BaseAuxReference(object):
 class BaseAuxReaderTest(object):
     def __init__(self, reference):
         self.ref = reference
+
+    def setUp(self):
         self.reader = self.ref.reader('test', self.ref.testdata)
+
+    def tearDown(self):
+        del self.reader
 
     def test_n_steps(self):
         assert_equal(self.reader.n_steps, self.ref.n_steps)
@@ -55,10 +60,9 @@ class BaseAuxReaderTest(object):
         assert_equal(self.reader.time, self.ref.all_times[0])
 
     def test_next_to_second_frame(self):
-        reader = self.ref.reader('test', self.ref.testdata)
-        reader.next()
-        assert_equal(reader.step_data, self.ref.all_step_data[1])
-        assert_equal(reader.time, self.ref.all_times[1])
+        self.reader.next()
+        assert_equal(self.reader.step_data, self.ref.all_step_data[1])
+        assert_equal(self.reader.time, self.ref.all_times[1])
 
     def test_go_to_step(self):
         ## (not all aux readers might have go_to_step)
@@ -94,9 +98,9 @@ class BaseAuxReaderTest(object):
         assert_equal(self.reader.step, self.ref.ts_highf_last_step)
 
     def test_ref_as_average(self):
-        reader = self.ref.reader('test', self.ref.testdata, represent_ts_as='average')
-        reader.read_ts(self.ref.ts_lowf)
-        assert_almost_equal(reader.ts_rep, self.ref.ts_lowf_rep_average)
+        self.reader.represent_ts_as = 'average'
+        self.reader.read_ts(self.ref.ts_lowf)
+        assert_almost_equal(self.reader.ts_rep, self.ref.ts_lowf_rep_average)
 
     @raises(ValueError)
     def test_bad_represent_raises_ValueError(self):
@@ -122,3 +126,4 @@ class TestXVGReader(BaseAuxReaderTest):
     def __init__(self):
         reference = XVGReference()
         super(TestXVGReader, self).__init__(reference)
+

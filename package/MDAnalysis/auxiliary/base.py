@@ -409,6 +409,9 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
                              "{1}".format(new, self.represent_options))
         self._represent_ts_as = new
 
+
+    def __del__(self):
+        self.close()    
     
 class AuxFileReader(AuxReader):
     """ Base class for auxiliary readers that read from file.
