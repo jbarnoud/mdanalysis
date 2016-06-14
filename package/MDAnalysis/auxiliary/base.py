@@ -113,9 +113,16 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
       
     def __init__(self, auxname, represent_ts_as='closest', cutoff=-1, 
                  dt=None, initial_time=None, time_col=None, data_cols=None, 
-                 constant_dt=True, **kwargs):
+                 constant_dt=True):
 
         self.name = auxname
+
+        # update when add new options
+        represent_options = ['closest', 'average']
+        if represent_ts_as not in represent_options:
+            raise ValueError("{0} is not a valid option for calculating "
+                             "representative value(s). Enabled options are: "
+                             "{1}".format(represent_ts_as, represent_options))
         self.represent_ts_as = represent_ts_as
         self.cutoff = cutoff
 
@@ -128,7 +135,6 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         self._initial_time = initial_time
         self._dt = dt
         self.constant_dt = constant_dt
-        self.time_col = time_col
 
         self.step = -1
         self._read_next_step()
@@ -143,6 +149,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
                     raise ValueError("Index {0} for data column out of range ("
                                      "num. cols is {1})".format(col,self.n_cols))
 
+        self.time_col = time_col
         if data_cols:
             self.data_cols = data_cols
         else:
