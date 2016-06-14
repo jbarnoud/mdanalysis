@@ -127,6 +127,9 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         Represenatative value of auxiliary data for current trajectory timestep.
 
     """
+
+    # update when add new options
+    represent_options = ['closest', 'average']
       
     def __init__(self, auxname, represent_ts_as='closest', cutoff=-1, 
                  dt=None, initial_time=None, time_col=None, data_cols=None, 
@@ -134,13 +137,9 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
 
         self.name = auxname
 
-        # update when add new options
-        represent_options = ['closest', 'average']
-        if represent_ts_as not in represent_options:
-            raise ValueError("{0} is not a valid option for calculating "
-                             "representative value(s). Enabled options are: "
-                             "{1}".format(represent_ts_as, represent_options))
+
         self.represent_ts_as = represent_ts_as
+
         self.cutoff = cutoff
 
         # set initially to avoid error on first read
@@ -156,15 +155,6 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         self.step = -1
         self._read_next_step()
         self.n_cols = len(self._data)
-
-        if time_col >= self.n_cols:
-            raise ValueError("Index {0} for time column out of range (num. "
-                             "cols is {1})".format(time_col, self.n_cols))
-        if data_cols:
-            for col in data_cols:
-                if col >= self.n_cols:
-                    raise ValueError("Index {0} for data column out of range ("
-                                     "num. cols is {1})".format(col,self.n_cols))
 
         self.time_col = time_col
         if data_cols:
@@ -389,6 +379,41 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         else:
             return 0 ## default to 0; WARN?      
 
+    @property
+    def time_col(self):
+        return self._time_col
+
+    @time_col.setter
+    def time_col(self, new): 
+        if new >= self.n_cols:
+            raise ValueError("Index {0} for time column out of range (num. "
+                             "cols is {1})".format(new, self.n_cols))
+        else:
+            self._time_col = new
+
+    @property
+    def data_cols(self):
+        return self._data_cols
+
+    @data_cols.setter
+    def data_cols(self, new):
+        for col in new:
+            if col >= self.n_cols:
+                raise ValueError("Index {0} for data column out of range ("
+                                 "num. cols is {1})".format(col,self.n_cols))
+        self._data_cols = new
+
+    @property
+    def represent_ts_as(self):
+        return self._represent_ts_as
+
+    @represent_ts_as.setter
+    def represent_ts_as(self, new):
+        if new not in self.represent_options:
+            raise ValueError("{0} is not a valid option for calculating "
+                             "representative value(s). Enabled options are: "
+                             "{1}".format(new, self.represent_options))
+        self._represent_ts_as = new
 
     
 class AuxFileReader(AuxReader):

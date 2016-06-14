@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import (assert_equal, assert_raises, assert_almost_equal,
-                           assert_array_almost_equal)
+                           assert_array_almost_equal, raises)
 import MDAnalysis as mda
 
 from MDAnalysisTests.datafiles import AUX_XVG
@@ -97,6 +97,18 @@ class BaseAuxReaderTest(object):
         reader = self.ref.reader('test', self.ref.testdata, represent_ts_as='average')
         reader.read_ts(self.ref.ts_lowf)
         assert_almost_equal(reader.ts_rep, self.ref.ts_lowf_rep_average)
+
+    @raises(ValueError)
+    def test_bad_represent_raises_ValueError(self):
+        self.reader.represent_ts_as = 'invalid option'
+
+    @raises(ValueError)
+    def test_time_col_out_of_range_raises_ValueError(self):
+        self.reader.time_col = self.reader.n_cols 
+
+    @raises(ValueError)
+    def test_data_col_out_of_range_raises_ValueError(self):
+        self.reader.data_cols = [self.reader.n_cols]
 
     ##TODO - file specific tests - opening/closing?
 
