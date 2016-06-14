@@ -129,7 +129,6 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         self._dt = dt
         self.constant_dt = constant_dt
         self.time_col = time_col
-        self.data_cols = data_cols
 
         self.step = -1
         self._read_next_step()
@@ -143,6 +142,12 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
                 if col >= self.n_cols:
                     raise ValueError("Index {0} for data column out of range ("
                                      "num. cols is {1})".format(col,self.n_cols))
+
+        if data_cols:
+            self.data_cols = data_cols
+        else:
+            self.data_cols = [i for i in range(self.n_cols) 
+                              if i != self.time_col]
 
         # get dt and initial time from auxiliary data (if time included)
         if self.time_col is not None and self.constant_dt:
@@ -274,7 +279,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
             cutoff_data = self.ts_data
             cutoff_diffs = self.ts_diffs
         if len(cutoff_data) == 0:
-            value = np.array([]) # TODO - flag as missing
+            value = np.array([np.nan]*len(self.data_cols))
         elif self.represent_ts_as == 'closest':
             value = cutoff_data[np.argmin(cutoff_diffs),:]
         elif self.represent_ts_as == 'average':
@@ -311,11 +316,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         As taken from the appropariate columns (identified in `data_cols`) of 
         the full auxiliary data read in for the current step.
         """
-        if self.data_cols:
-            return [self._data[i] for i in self.data_cols]
-        else:
-            return [self._data[i] for i in range(self.n_cols) 
-                    if i != self.time_col]
+        return [self._data[i] for i in self.data_cols]
 
     @property
     def n_steps(self):

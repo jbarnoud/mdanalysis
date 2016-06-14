@@ -1,4 +1,4 @@
-
+import numpy as np
 from numpy.testing import (assert_equal, assert_raises, assert_almost_equal,
                            assert_array_almost_equal)
 import MDAnalysis as mda
@@ -7,24 +7,28 @@ from MDAnalysisTests.datafiles import AUX_XVG
 
 class BaseAuxReference(object):
     def __init__(self):
-        self.n_steps = 5
-        self.n_cols = 2
-        self.all_step_data = [[1], [2], [4], [8], [16]]
-        self.all_times = [0, 1, 2, 3, 4]
-        self.dt = 1
-        self.initial_time = 0
+        self.all_data = [[0,1], [1,2], [2,4], [3,8], [4,16]]
 
-        self.ts_lowf = mda.coordinates.base.Timestep(0, dt=2)
-        self.ts_lowf.frame=1
+        self.all_step_data = [[i[1]] for i in self.all_data]
+        self.all_times = [i[0] for i in self.all_data]
+        self.n_steps = len(self.all_data)
+        self.n_cols = len(self.all_data[0])
+        self.dt = self.all_times[1] - self.all_times[0]
+        self.initial_time = self.all_times[0]
+
+        lowf_dt = self.dt * 2
+        self.ts_lowf = mda.coordinates.base.Timestep(0, dt=lowf_dt)
+        self.ts_lowf.frame = 1
         self.ts_lowf_data = [[2], [4]]
         self.ts_lowf_rep = [4] 
         self.ts_lowf_rep_average = [3]
         self.ts_lowf_last_step = 2
 
-        self.ts_highf = mda.coordinates.base.Timestep(0, dt=0.5)
-        self.ts_highf.frame=1
+        highf_dt = self.dt / 2.
+        self.ts_highf = mda.coordinates.base.Timestep(0, dt=highf_dt)
+        self.ts_highf.frame = 1
         self.ts_highf_data = []
-        self.ts_highf_rep = []
+        self.ts_highf_rep = [np.nan]
         self.ts_highf_last_step = 0
 
 
