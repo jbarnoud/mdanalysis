@@ -379,11 +379,12 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
 
     @time_col.setter
     def time_col(self, new): 
-        if new >= self.n_cols:
-            raise ValueError("Index {0} for time column out of range (num. "
+        try:
+            self._data[new]
+        except IndexError:
+            raise ValueError("{0} is not a valid index for time column (num. "
                              "cols is {1})".format(new, self.n_cols))
-        else:
-            self._time_col = new
+        self._time_col = new
 
     @property
     def data_cols(self):
@@ -392,9 +393,11 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     @data_cols.setter
     def data_cols(self, new):
         for col in new:
-            if col >= self.n_cols:
-                raise ValueError("Index {0} for data column out of range ("
-                                 "num. cols is {1})".format(col,self.n_cols))
+            try:
+                self._data[col]
+            except IndexError:
+                raise ValueError("{0} not a valid data column index ("
+                                 "num. cols is {1})".format(col, self.n_cols))
         self._data_cols = new
 
     @property
