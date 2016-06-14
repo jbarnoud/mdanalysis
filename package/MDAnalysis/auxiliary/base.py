@@ -132,7 +132,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     represent_options = ['closest', 'average']
       
     def __init__(self, auxname, represent_ts_as='closest', cutoff=-1, 
-                 dt=None, initial_time=None, time_col=None, data_cols=None, 
+                 dt=1, initial_time=0, time_col=None, data_cols=None, 
                  constant_dt=True):
 
         self.name = auxname
@@ -364,20 +364,14 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         """ Change in time between steps. 
 
         Defaults to 1ps if not provided or read from auxiliary data. """
-        if self._dt:
-            return self._dt
-        else:
-            return 1  ## default to 1ps; WARN?
+        return self._dt
 
     @property
     def initial_time(self):
         """ Time corresponding to first auxiliary step. 
 
         Defaults to 0ps if not provided or read from auxilairy data. """
-        if self._initial_time:
-            return self._initial_time
-        else:
-            return 0 ## default to 0; WARN?      
+        return self._initial_time
 
     @property
     def time_col(self):
