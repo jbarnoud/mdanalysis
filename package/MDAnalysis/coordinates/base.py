@@ -141,9 +141,15 @@ from ..auxiliary.base import AuxReader
 from ..auxiliary.core import get_auxreader_for
 
 class Namespace(object):
-    """Empty class 
-    To allow storing attributes in new namespace """
-    pass
+    """Class to allow storing attributes in new namespace. """
+    def __getattr__(self, key):
+        # a.this causes a __getattr__ call for key = 'this' 
+        return self.__dict__[key]
+    def __setattr__(self, key, value):
+        # a.this = 10 causes a __setattr__ call for key='this' value=10
+        self.__dict__[key] = value
+    def __delattr__(self, key):
+        del self.__dict__[key]
 
 
 class Timestep(object):
@@ -1349,7 +1355,7 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
         if auxname in self.aux_list:
             self._auxs[auxname].close()            
             del self._auxs[auxname]
-            del self.ts.aux.__dict__[auxname]
+            delattr(self.ts.aux, auxname)
         else:
             raise ValueError("No auxiliary named {name}".format(name=auxname))
             

@@ -249,7 +249,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
             self._read_next_step()
             self._add_step_to_ts(ts.time)
         self.ts_rep = self.calc_representative()
-        ts.aux.__dict__[self.name] = self.ts_rep
+        setattr(ts.aux, self.name, self.ts_rep)
         return ts
 
 
