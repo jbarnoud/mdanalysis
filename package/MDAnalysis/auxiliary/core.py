@@ -21,6 +21,8 @@ Common functions for auxiliary reading --- :mod:`MDAnalysis.auxiliary.core`
 .. autofunction:: get_auxreader_for
 """
 
+from six import string_types
+
 from . import _AUXREADERS
 from ..lib import util
 
@@ -48,7 +50,7 @@ def get_auxreader_for(auxdata, format=None):
     """
 
     if format is None:
-        if type(auxdata) == str:
+        if instance(auxdata, string_types):
             ## assume it's a filename?
             format = util.guess_format(auxdata)
         else:
