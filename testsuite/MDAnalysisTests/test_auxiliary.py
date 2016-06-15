@@ -104,7 +104,7 @@ class BaseAuxReaderTest(object):
 
     @raises(ValueError)
     def test_bad_represent_raises_ValueError(self):
-        self.reader.represent_ts_as = 'invalid option'
+        self.reader.represent_ts_as = 'invalid-option'
 
     @raises(ValueError)
     def test_time_col_out_of_range_raises_ValueError(self):

@@ -1228,7 +1228,7 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
         """Move to *frame*, updating ts with trajectory and auxiliary data."""
         ts = self._read_frame(frame)
         for aux in self.aux_list:
-            ts = self._auxs[aux].go_to_ts(ts)
+            ts = self._auxs[aux].read_ts(ts) 
         return ts
 
     def _sliced_iter(self, start, stop, step):
@@ -1341,7 +1341,7 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
             auxreader = get_auxreader_for(auxdata)
             aux = auxreader(auxname, auxdata, **kwargs)
         self._auxs[auxname] = aux
-        self.ts = aux.go_to_ts(self.ts)
+        self.ts = aux.read_ts(self.ts)
     
     def remove_auxiliary(self, auxname):
         """Close the Reader for auxiliary data *auxname* and remove data 

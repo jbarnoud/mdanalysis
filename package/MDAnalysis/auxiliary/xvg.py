@@ -14,30 +14,52 @@
 # J. Comput. Chem. 32 (2011), 2319--2327, doi:10.1002/jcc.21787
 #
 
+"""
+XVG auxiliary reader --- :mod:`MDAnalysis.auxiliary.xvg`
+========================================================
+
+.. autoclass:: XVGReader
+   :members:
+
+"""
 
 import numpy as np
 from . import base
 
 class XVGReader(base.AuxFileReader):
-    """ Read data (step at a time) from an .xvg file.
+    """ Auxiliary reader to read (step at a time) from an .xvg file.
+
+    xvg files are produced by Gromacs during simulation or analysis, formatted
+    for plotting data with Grace.
     
-    Assumes data is time-ordered and first column is time.
+    Paramaters
+    ----------
+    auxname : str
+        Name for auxiliary data. When added to a trajectory, the representative 
+        auxiliary value(s) for the timestep are stored as ``ts.aux.name``.
+    filename : str
+       Location of the file containing the auxiliary data.
+    **kwargs
+       Other AuxReader options.    
+
+    Notes
+    -----
+    The time of each step is assumed to stored in the first column (*time_col*
+    defaults to 0), and data is assumed to be time-ordered.
     """
+
     # TODO - swtich to reading file all at once
 
     format = "XVG"
  
     def __init__(self, auxname, filename, **kwargs):
-        try:
-            time_col = kwargs['time_col']
-        except KeyError:
-            time_col = 0
+        time_col = kwargs.pop('time_col', 0)
         super(XVGReader, self).__init__(auxname, filename, time_col=time_col, 
                                         **kwargs)
 
         
     def _read_next_step(self):
-        """ Read next recorded step in xvg file """
+        """ Read next recorded step in xvg file. """
         line = self.auxfile.readline()
         if line:
             # xvg has both comments '#' and grace instructions '@'
@@ -55,36 +77,16 @@ class XVGReader(base.AuxFileReader):
         else:
             self.go_to_first_step()
             raise StopIteration
- 
-    def go_to_ts(self, ts):
-        """ Move to and read auxilairy steps corresponding to *ts* """
-        # only restart if we're currently beyond *ts*
-        if self.step_to_frame(self.step, ts) >= ts.frame:
-            self._restart()
-        while self.step_to_frame(self.step+1, ts) < ts.frame:
-            if self.step == self.n_steps-1:
-                return ts
-            self._read_next_step()    
- 
-        return self.read_ts(ts)
 
-    def go_to_step(self, i):
-        """ Move to and read i-th auxiliary step """
-        ## could seek instead?
-        if i >= self.n_steps:
-            raise ValueError("{0} is out of range range of auxiliary"
-                             "(num. steps {1}!".format(i, self.n_steps))
-        if i < 0:
-            raise ValueError("Step numbering begins from 0")
-
-        value = self.go_to_first_step()
-        while self.step != i:
-            value = self._read_next_step()
-        return value
 
     def count_n_steps(self):
-        """ Read through all steps to count total number of steps.
-        (Also create times list while reading through) """
+        """ Iterate through all steps to count total number and make times list.
+
+        Returns
+        -------
+        int
+           Total number of steps
+        """
         self._restart()
         times = []
         count = 0
@@ -96,4 +98,3 @@ class XVGReader(base.AuxFileReader):
 
     def read_all_times(self):
         self.count_n_steps()
-
