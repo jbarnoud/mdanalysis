@@ -33,6 +33,7 @@ import six
 
 import numpy as np
 import math
+import warnings
 
 from ..lib.util import asiterable
 
@@ -72,7 +73,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
 
     Paramaters
     ----------
-    name : str
+    name : str, optional
         Name for auxiliary data. When added to a trajectory, the representative 
         auxiliary value(s) for the timestep are stored as ``ts.aux.name``.
     represent_ts_as : {'closest', 'average'}
@@ -134,12 +135,12 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     # update when add new options
     represent_options = ['closest', 'average']
       
-    def __init__(self, auxname, represent_ts_as='closest', cutoff=-1, 
+    def __init__(self, represent_ts_as='closest', name=None, cutoff=-1, 
                  dt=1, initial_time=0, time_col=None, data_cols=None, 
                  constant_dt=True):
-
-        self.name = auxname
-
+        # allow name to be optional for when using reader separate from
+        # trajectory.
+        self.name = name
 
         self.represent_ts_as = represent_ts_as
 
@@ -249,7 +250,15 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
             self._read_next_step()
             self._add_step_to_ts(ts.time)
         self.ts_rep = self.calc_representative()
-        setattr(ts.aux, self.name, self.ts_rep)
+
+        # check we have a name to set in ts
+        if self.name:
+            setattr(ts.aux, self.name, self.ts_rep)
+        else:
+            # assume we don't want to store in ts. Should only happen when
+            # using AuxReader independantly of a trajectory.
+            warnings.warn("Auxiliary name not set, assuming you don't want to "
+                          "store representative value in *ts*.")
         return ts
 
 
@@ -484,9 +493,6 @@ class AuxFileReader(AuxReader):
 
     Paramaters
     ----------
-    auxname : str
-        Name for auxiliary data. When added to a trajectory, the representative 
-        auxiliary value(s) for the timestep are stored as ``ts.aux.name``.
     filename : str
        Location of the file containing the auxiliary data.
     **kwargs
@@ -502,11 +508,11 @@ class AuxFileReader(AuxReader):
     :class:`AuxReader`
     """
     
-    def __init__(self, auxname, filename, **kwargs):
+    def __init__(self, filename, **kwargs):
         self.filename = filename
         self.auxfile = open(filename)
         
-        super(AuxFileReader, self).__init__(auxname, **kwargs)
+        super(AuxFileReader, self).__init__(**kwargs)
 
     def close(self):
         """ Close *auxfile*. """

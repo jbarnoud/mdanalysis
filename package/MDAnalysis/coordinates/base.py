@@ -1345,7 +1345,7 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
             aux = auxdata
         else:
             auxreader = get_auxreader_for(auxdata)
-            aux = auxreader(auxname, auxdata, **kwargs)
+            aux = auxreader(auxdata, name=auxname, **kwargs)
         self._auxs[auxname] = aux
         self.ts = aux.read_ts(self.ts)
     

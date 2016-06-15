@@ -37,7 +37,7 @@ class BaseAuxReaderTest(object):
         self.ref = reference
 
     def setUp(self):
-        self.reader = self.ref.reader('test', self.ref.testdata)
+        self.reader = self.ref.reader(self.ref.testdata, name='test')
 
     def tearDown(self):
         del self.reader

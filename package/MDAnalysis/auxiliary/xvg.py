@@ -34,9 +34,6 @@ class XVGReader(base.AuxFileReader):
     
     Paramaters
     ----------
-    auxname : str
-        Name for auxiliary data. When added to a trajectory, the representative 
-        auxiliary value(s) for the timestep are stored as ``ts.aux.name``.
     filename : str
        Location of the file containing the auxiliary data.
     **kwargs
@@ -52,9 +49,9 @@ class XVGReader(base.AuxFileReader):
 
     format = "XVG"
  
-    def __init__(self, auxname, filename, **kwargs):
+    def __init__(self, filename, **kwargs):
         time_col = kwargs.pop('time_col', 0)
-        super(XVGReader, self).__init__(auxname, filename, time_col=time_col, 
+        super(XVGReader, self).__init__(filename, time_col=time_col, 
                                         **kwargs)
 
         
