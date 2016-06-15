@@ -15,7 +15,7 @@
 #
 
 """
-XVG auxiliary reader --- :mod:`MDAnalysis.auxiliary.xvg`
+XVG auxiliary reader --- :mod:`MDAnalysis.auxiliary.XVG`
 ========================================================
 
 .. autoclass:: XVGReader

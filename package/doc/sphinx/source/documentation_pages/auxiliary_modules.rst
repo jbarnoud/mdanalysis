@@ -13,5 +13,5 @@ alignment between auxiliary and trajectory data.
    auxiliary/init
    auxiliary/base
    auxiliary/core
-   auxiliary/xvg
+   auxiliary/XVG
 

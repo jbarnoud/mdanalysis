@@ -120,7 +120,7 @@ class XVGReference(BaseAuxReference):
     def __init__(self):
         super(XVGReference, self).__init__()
         self.testdata = AUX_XVG
-        self.reader = mda.auxiliary.xvg.XVGReader
+        self.reader = mda.auxiliary.XVG.XVGReader
 
 class TestXVGReader(BaseAuxReaderTest):
     def __init__(self):

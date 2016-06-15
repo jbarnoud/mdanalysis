@@ -244,4 +244,4 @@ following (though these may be overwritten by subclasses as appropriate):
 _AUXREADERS = {}
 
 from . import base
-from . import xvg
+from . import XVG
