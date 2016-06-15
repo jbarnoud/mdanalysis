@@ -50,7 +50,7 @@ def get_auxreader_for(auxdata, format=None):
     """
 
     if format is None:
-        if instance(auxdata, string_types):
+        if isinstance(auxdata, string_types):
             ## assume it's a filename?
             format = util.guess_format(auxdata)
         else:
