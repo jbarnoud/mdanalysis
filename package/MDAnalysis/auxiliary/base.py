@@ -350,8 +350,8 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         if self.cutoff != -1:
             cutoff_data = np.array([self.ts_data[i] 
                                     for i,d in enumerate(self.ts_diffs)
-                                    if d < self.cutoff])
-            cutoff_diffs = [d for d in self.ts_diffs if d < self.cutoff]
+                                    if d <= self.cutoff])
+            cutoff_diffs = [d for d in self.ts_diffs if d <= self.cutoff]
         else:
             cutoff_data = self.ts_data
             cutoff_diffs = self.ts_diffs
@@ -442,7 +442,10 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         return self._time_col
 
     @time_col.setter
-    def time_col(self, new): 
+    def time_col(self, new):
+        if new == None:
+            self._time_col=new
+            return
         try:
             self._data[new]
         except IndexError:
@@ -532,7 +535,8 @@ class AuxFileReader(AuxReader):
         
     def _reopen(self):
         """ Close and then reopen *auxfile*. """
-        self.auxfile.close()
+        if self.auxfile != None:
+            self.auxfile.close()
         self.auxfile = open(self.filename)
         self.step = -1
 

@@ -147,6 +147,11 @@ class BaseReference(object):
         self.dt = 1
         self.totaltime = 5
 
+        self.iter_as_aux_lowf_steps = [0, 1, 2]
+        self.iter_as_aux_lowf_frames = [0, 2, 4]
+        self.iter_as_aux_highf_steps = [0, 2, 4, 6, 8]
+        self.iter_as_aux_highf_frames = [0, 1, 2, 3, 4]
+
     def iter_ts(self, i):
         ts = self.first_frame.copy()
         ts.positions = 2**i * self.first_frame.positions
@@ -260,7 +265,30 @@ class BaseReaderTest(object):
             assert_timestep_almost_equal(ts, self.ref.iter_ts(i),
                                          decimal=self.ref.prec)
 
-    ## TODO - test add aux, remove aux, next/iter as aux...
+    @raises(ValueError)
+    def test_add_same_auxname_raises_ValueError(self):
+        self.reader.add_auxiliary('lowf', self.ref.aux_lowf)
+
+    def test_remove_auxiliary(self):
+        self.reader.remove_auxiliary('lowf')
+        assert_raises(AttributeError, getattr, self.reader._auxs, 'lowf')
+        assert_raises(KeyError, getattr, self.reader.ts.aux, 'lowf')
+
+    @raises(ValueError)
+    def test_remove_nonexistant_auxiliary_raises_ValueError(self):
+        self.reader.remove_auxiliary('nonexistant')
+
+    def test_iter_as_aux_highf(self):
+        for i, ts in enumerate(self.reader.iter_as_aux('highf')):
+            assert_equal(ts.frame, self.ref.iter_as_aux_highf_frames[i])
+            assert_equal(self.reader._auxs['highf'].step, 
+                         self.ref.iter_as_aux_highf_steps[i])
+
+    def test_iter_as_aux_lowf(self):
+        for i, ts in enumerate(self.reader.iter_as_aux('lowf')):
+            assert_equal(ts.frame, self.ref.iter_as_aux_lowf_frames[i])
+            assert_equal(self.reader._auxs['lowf'].step, 
+                         self.ref.iter_as_aux_lowf_steps[i])
 
 
 class BaseWriterTest(object):

@@ -76,21 +76,35 @@ class XVGReader(base.AuxFileReader):
 
 
     def count_n_steps(self):
-        """ Iterate through all steps to count total number and make times list.
+        """ Iterate through all steps to count total number.
 
         Returns
         -------
         int
-           Total number of steps
+            Total number of steps
+        """
+
+        if self.constant_dt:
+            # will have to iterate through all to built times list anyway
+            return len(self.read_all_times())
+        else:
+            # iterate here instead
+            self._restart()
+            count = 0
+            for step in self:
+                count = count + 1
+            return count
+
+    def read_all_times(self):
+        """ Iterate through all steps to build times list.
+
+        Returns
+        -------
+        list of float
+            Time of each step
         """
         self._restart()
         times = []
-        count = 0
         for step in self:
-            count = count + 1
             times.append(self.time)
-        self._times = times
-        return count
-
-    def read_all_times(self):
-        self.count_n_steps()
+        return times

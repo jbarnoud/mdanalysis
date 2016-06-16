@@ -3,14 +3,25 @@ from numpy.testing import (assert_equal, assert_raises, assert_almost_equal,
                            assert_array_almost_equal, raises)
 import MDAnalysis as mda
 
-from MDAnalysisTests.datafiles import AUX_XVG
+from MDAnalysisTests.datafiles import AUX_XVG, XVG_BAD_NCOL
+
+@raises(ValueError)
+def test_get_bad_auxreader_format_raises_ValueError():
+    mda.auxiliary.core.get_auxreader_for('data', format='bad-format')
 
 class BaseAuxReference(object):
     def __init__(self):
-        self.all_data = [[0,1], [1,2], [2,4], [3,8], [4,16]]
+        self.all_data = [[0, 0, 1], [1, 2, 2], [2, 4, 4], [3, 6, 8], [4, 8, 16]]
 
-        self.all_step_data = [[i[1]] for i in self.all_data]
+        # make time first column
+        self.time_col = 0
         self.all_times = [i[0] for i in self.all_data]
+        self.all_step_data = [[i[1], i[2]] for i in self.all_data]
+
+        # for testing data col selection
+        self.set_data_cols = [1]
+        self.set_data_cols_vals = [[i[1]] for i in self.all_data]
+
         self.n_steps = len(self.all_data)
         self.n_cols = len(self.all_data[0])
         self.dt = self.all_times[1] - self.all_times[0]
@@ -19,31 +30,33 @@ class BaseAuxReference(object):
         lowf_dt = self.dt * 2
         self.ts_lowf = mda.coordinates.base.Timestep(0, dt=lowf_dt)
         self.ts_lowf.frame = 1
-        self.ts_lowf_data = [[2], [4]]
-        self.ts_lowf_rep = [4] 
-        self.ts_lowf_rep_average = [3]
+        self.ts_lowf_data = [[2, 2], [4, 4]]
+        self.ts_lowf_rep = [4, 4] 
+        self.ts_lowf_rep_average = [3, 3]
         self.ts_lowf_last_step = 2
+        self.cutoff = 0
+        self.ts_lowf_cutoff_average = [4, 4]
+        self.cutoff_closest = -0.1
+        self.ts_lowf_cutoff_closest = [np.nan, np.nan]
 
         highf_dt = self.dt / 2.
         self.ts_highf = mda.coordinates.base.Timestep(0, dt=highf_dt)
         self.ts_highf.frame = 1
         self.ts_highf_data = []
-        self.ts_highf_rep = [np.nan]
+        self.ts_highf_rep = [np.nan, np.nan]
         self.ts_highf_last_step = 0
 
 
 class BaseAuxReaderTest(object):
     def __init__(self, reference):
         self.ref = reference
-
-    def setUp(self):
-        self.reader = self.ref.reader(self.ref.testdata, name='test')
+        self.reader = self.ref.reader(self.ref.testdata, time_col=0)
 
     def tearDown(self):
         del self.reader
 
     def test_n_steps(self):
-        assert_equal(self.reader.n_steps, self.ref.n_steps)
+        assert_equal(len(self.reader), self.ref.n_steps)
 
     def test_n_cols(self):
         assert_equal(self.reader.n_cols, self.ref.n_cols)
@@ -60,12 +73,11 @@ class BaseAuxReaderTest(object):
         assert_equal(self.reader.time, self.ref.all_times[0])
 
     def test_next_to_second_frame(self):
-        self.reader.next()
+        next(self.reader)
         assert_equal(self.reader.step_data, self.ref.all_step_data[1])
         assert_equal(self.reader.time, self.ref.all_times[1])
 
     def test_go_to_step(self):
-        ## (not all aux readers might have go_to_step)
         self.reader.go_to_step(3)
         assert_equal(self.reader.step_data, self.ref.all_step_data[3])
         assert_equal(self.reader.time, self.ref.all_times[3])
@@ -80,26 +92,24 @@ class BaseAuxReaderTest(object):
                         'data': self.ref.all_step_data[i]}
             assert_equal(val, ref_data)
 
-    def test_read_ts_lowf(self):
-        ## split up the following?
-        self.reader.read_ts(self.ref.ts_lowf)
-        assert_equal(self.reader.ts_data, self.ref.ts_lowf_data)
-        assert_almost_equal(self.reader.ts_rep, self.ref.ts_lowf_rep)
-        assert_almost_equal(self.ref.ts_lowf.aux.test, self.ref.ts_lowf_rep)
-        assert_equal(self.reader.step, self.ref.ts_lowf_last_step)
+    def test_data_cols(self):
+        self.reader = self.ref.reader(self.ref.testdata, 
+                                      data_cols=self.ref.set_data_cols)
+        for i, val in enumerate(self.reader):
+            assert_equal(self.reader.step_data, self.ref.set_data_cols_vals[i])
 
-    def test_read_ts_highf(self):
-        ## split?
-        self.reader.read_ts(self.ref.ts_highf)
-        assert_equal(self.reader.ts_data, self.ref.ts_highf_data)
-        assert_almost_equal(self.reader.ts_rep, self.ref.ts_highf_rep)
-        assert_almost_equal(self.ref.ts_highf.aux.test, self.ref.ts_highf_rep)
-        assert_equal(self.reader.step, self.ref.ts_highf_last_step)
+    def test_no_time_col(self):
+        self.reader = self.ref.reader(self.ref.testdata, dt=self.ref.dt, 
+                                      initial_time=self.ref.initial_time)
+        for i, val in enumerate(self.reader):
+            ref_data = {'time': self.ref.all_times[i], 
+                        'data': self.ref.all_data[i]}
+            assert_equal(val, ref_data)
 
-    def test_ref_as_average(self):
-        self.reader.represent_ts_as = 'average'
-        self.reader.read_ts(self.ref.ts_lowf)
-        assert_almost_equal(self.reader.ts_rep, self.ref.ts_lowf_rep_average)
+    def test_no_constant_dt(self):
+        self.reader = self.ref.reader(self.ref.testdata, time_col=0,
+                                      constant_dt=False)
+        assert_almost_equal(self.reader.times, self.ref.all_times)
 
     @raises(ValueError)
     def test_bad_represent_raises_ValueError(self):
@@ -113,7 +123,51 @@ class BaseAuxReaderTest(object):
     def test_data_col_out_of_range_raises_ValueError(self):
         self.reader.data_cols = [self.reader.n_cols]
 
-    ##TODO - file specific tests - opening/closing?
+    @raises(ValueError)
+    def test_go_to_invalid_step_raises_ValueError(self):
+        self.reader.go_to_step(self.reader.n_steps)
+
+    def test_not_setting_auxname(self):
+        self.reader.read_ts(self.ref.ts_lowf)
+        assert_equal(len(self.ref.ts_lowf.aux.__dict__), 0)
+
+    def test_read_ts_lowf(self):
+        ## split up the following?
+        self.reader.name = 'test'
+        self.reader.read_ts(self.ref.ts_lowf)
+        assert_equal(self.reader.ts_data, self.ref.ts_lowf_data)
+        assert_almost_equal(self.reader.ts_rep, self.ref.ts_lowf_rep)
+        assert_almost_equal(self.ref.ts_lowf.aux.test, self.ref.ts_lowf_rep)
+        assert_equal(self.reader.step, self.ref.ts_lowf_last_step)
+
+    def test_read_ts_highf(self):
+        ## split?
+        self.reader.name = 'test'
+        self.reader.read_ts(self.ref.ts_highf)
+        assert_equal(self.reader.ts_data, self.ref.ts_highf_data)
+        assert_almost_equal(self.reader.ts_rep, self.ref.ts_highf_rep)
+        assert_almost_equal(self.ref.ts_highf.aux.test, self.ref.ts_highf_rep)
+        assert_equal(self.reader.step, self.ref.ts_highf_last_step)
+
+    def test_ref_as_average(self):
+        self.reader.represent_ts_as = 'average'
+        self.reader.name = 'test'
+        self.reader.read_ts(self.ref.ts_lowf)
+        assert_almost_equal(self.reader.ts_rep, self.ref.ts_lowf_rep_average)
+
+    def test_cutoff_average(self):
+        self.reader.cutoff = self.ref.cutoff
+        self.reader.read_ts(self.ref.ts_lowf)
+        assert_equal(self.reader.ts_rep, self.ref.ts_lowf_cutoff_average)
+
+    def test_cutoff_closest(self):
+        self.reader.cutoff = self.ref.cutoff_closest
+        self.reader.read_ts(self.ref.ts_lowf)
+        assert_equal(self.reader.ts_rep, self.ref.ts_lowf_cutoff_closest)
+
+    def test_get_auxreader_for(self):
+        reader = mda.auxiliary.core.get_auxreader_for(self.ref.testdata)
+        assert_equal(reader, self.ref.reader)
 
 class XVGReference(BaseAuxReference):
     def __init__(self):
@@ -126,3 +180,21 @@ class TestXVGReader(BaseAuxReaderTest):
         reference = XVGReference()
         super(TestXVGReader, self).__init__(reference)
 
+    def test_no_time_col(self):
+        #since defaults to assume time first col
+        self.reader = self.ref.reader(self.ref.testdata, dt=self.ref.dt, 
+                                      initial_time=self.ref.initial_time,
+                                      time_col=None)
+        for i, val in enumerate(self.reader):
+            ref_data = {'time': self.ref.all_times[i], 
+                        'data': self.ref.all_data[i]}
+            assert_equal(val, ref_data)
+
+    def test_reopen(self):
+        self.reader._reopen()
+        assert_equal(self.reader.step_data, self.ref.all_step_data[0])
+
+    @raises(ValueError)
+    def test_wrong_n_col_raises_ValueError(self):
+        self.reader = self.ref.reader(XVG_BAD_NCOL)
+        next(self.reader)
