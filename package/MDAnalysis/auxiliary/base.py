@@ -19,7 +19,7 @@
 Auxiliary Readers --- :mod:`MDAnalysis.auxiliary.base`
 ======================================================
 
-Base classes for deriving all auxiliary data readers. See the API in :mod:`~MDAnalysis.auxiliary.__init__`.
+Base classes for deriving all auxiliary data readers. See the API in :mod:`MDAnalysis.auxiliary.__init__`.
 
 .. autoclass:: AuxReader
    :members:
@@ -61,7 +61,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     data may be stored in e.g. an array or a separate file.
 
     Auxiliary data may be added to a trajectory by 
-    :meth:`MDAnalysis.coordinates.base.Reader.add_auxiliary`, passing either an 
+    :meth:`MDAnalysis.coordinates.base.ProtoReader.add_auxiliary`, passing either an 
     AuxReader instance or the data/filename, in which case an appropriate reader 
     will be selected based on type/file extension.
    
@@ -71,17 +71,19 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     auxiliary value (or values) based on the steps assigned to that timestep.
 
 
-    Paramaters
+    Parameters
     ----------
     name : str, optional
         Name for auxiliary data. When added to a trajectory, the representative 
         auxiliary value(s) for the timestep are stored as ``ts.aux.name``.
     represent_ts_as : {'closest', 'average'}
-        How to calculated representative value of auxiliary data for a 
+        How to calculate representative value of auxiliary data for a 
         trajectory timestep. Currently available:
-          *'closest': value from step closest to the trajectory timestep
-          *'average': average of values from auxiliary steps assigned to 
-                      the trajectory timestep.
+
+          * 'closest': value from step closest to the trajectory timestep
+
+          * 'average': average of values from auxiliary steps assigned to the trajectory timestep.
+
     cutoff : float, optional
         Auxiliary steps further from the trajectory timestep than *cutoff* 
         will be ignored when calculating representative values (the default
@@ -89,27 +91,29 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         timestep will be used).
     dt : float, optional
         Change in time between auxiliary steps (in ps). If not specified, will
-        attempt to be determined from auxiliary data; otherwise defaults to 1ps.
+        attempt to be determined from auxiliary data; otherwise defaults to 1 ps.
     initial_time : float, optional 
         Time of first auxilairy step (in ps). If not specified, will attempt to
-        be determined from auxiliary data; otherwise defaults to 0ps.
+        be determined from auxiliary data; otherwise defaults to 0 ps.
     time_col : int, optional
-        Index of column in auxiliary data storing time (default value ``None``).
+        Index of column in auxiliary data storing time (assumed to be in ps)
+        (if ``None`` (default value), time is instead calculated from ``dt`` 
+        and ``initial_time``).
     data_cols : list of str, optional
         Indices of columns containing data of interest to be stored in 
-        `step_data` (defaults to all columns).
+        ``step_data`` (defaults to all columns).
     constant_dt : bool, optional
-        If true, will use dt/initial_time to calculate time even when time
-        stored in auxiliary data (default value is ``True``).
+        If true, will use ``dt``/``initial_time`` to calculate step time even 
+        when time stored in auxiliary data (default value is ``True``).
 
 
 
     Attributes
     ----------
     step : int
-        Number of the current auxiliary step, starting at 0.
+        Number of the current auxiliary step (0-based).
     n_steps : int
-        Total number of auxiliary steps
+        Total number of auxiliary steps.
     n_cols : int
         Number of columns of data for each auxiliary step.
     time : float
@@ -130,6 +134,10 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     ts_rep : list of float
         Represenatative value of auxiliary data for current trajectory timestep.
 
+    Note
+    ----
+    Auxiliary data are assumed to be time ordered and contain no duplicates.
+    It step time is read from the data, it is assumed to be in ps units.
     """
 
     # update when add new options
@@ -217,12 +225,15 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         """ Read auxiliary data corresponding to the trajectory timestep *ts*.
 
         Read the auxiliary steps 'assigned' to *ts* (the steps that are within
-        *ts.dt*/2 of of the trajectory timestep/frame - ie. closer to *ts*
+        ``ts.dt/2`` of of the trajectory timestep/frame - ie. closer to *ts*
         than either the preceeding or following frame). Then calculate a 
         'representative value' for the timestep from the data in each of these 
-        auxiliary steps, and add to *ts*.
+        auxiliary steps.
 
-        Paramaters
+        If ``name`` is set, the representative value will also be added to the
+        timestep as ``ts.aux.name``.
+
+        Parameters
         ----------
         ts : :class:`~MDAnalysis.coordinates.base.Timestep` object
             The trajectory timestep for which corresponding auxiliary data is
@@ -230,20 +241,20 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
 
         Returns
         -------
-        The :class:`~MDAnalysis.coordinates.base.Timestep` object with the 
-        representative value in *ts.aux* updated appropriately.
+        :class:`~MDAnalysis.coordinates.base.Timestep`
+            If ``name`` is set, the representative auxiliary value in ``ts.aux`` 
+            will be updated appropriately.
 
-        Notes
-        -----
+        Note
+        ----
         The auxiliary reader will end up positioned at the last step assigned
         to the trajectory frame or, if the frame includes no auxiliary steps,
         (as when auxiliary data are less frequent), the most recent auxiliary 
         step before the frame.
-
         """
         # Make sure our auxiliary step starts at the right point (just before
         # the frame being read): the current step should be assigned to a 
-        # previous frame, and the next step to either the frame being read of a 
+        # previous frame, and the next step to either the frame being read or a 
         # following frame. Move to right position if not.
         if not (self.step_to_frame(self.step, ts) < ts.frame
                 and self.step_to_frame(self.step+1, ts) >= ts.frame):
@@ -272,7 +283,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         Calculated given dt and offset from *ts* as::
             frame = math.floor((self.times[step]-offset+ts.dt/2.)/ts.dt)
 
-        Paramaters
+        Parameters
         ----------
         step : int
             Step number to calculate closest trajectory frame for.
@@ -285,7 +296,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         int or None
             Number of the trajectory frame closest (in time) to the given
             auxiliary step. If the step index is out of range for the auxiliary
-            data, None is returned instead.
+            data, ``None`` is returned instead.
 
         Notes
         -----
@@ -305,7 +316,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         assigned to that timestep (as in the case of less frequent auxiliary
         data), the first auxiliary step after *ts*.
 
-        Paramaters
+        Parameters
         ----------
         ts : :class:`~MDAnalysis.coordinates.base.Timestep` object
             The trajectory timestep before which the auxiliary reader is to
@@ -321,8 +332,13 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         self.ts_diffs = []
 
     def _add_step_to_ts(self, ts_time):
-        """ Add data from the current step to *ts_data* and difference in time
-        to *ts_time* (the trajectory timestep) of the current step to *ts_diffs*
+        """ Update ``ts_data`` and ``ts_diffs`` with values for the current step.
+
+        Parameters
+        ----------
+        ts_time : float
+            the time of the timestep the current step is being 'added to'. Used
+            to calculate difference in time between current step and timestep.
         """
         if len(self.ts_data) == 0:
             self.ts_data = np.array([self.step_data])
@@ -334,18 +350,22 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         """ Calculate represenatative auxiliary value(s) from *ts_data*.
         
         Currently available options for calculating represenatative value are:
-          *'closest': default; the value(s) from the step closest to in time to 
+          * 'closest': default; the value(s) from the step closest to in time to 
            the trajectory timestep
-          *'average': average of the value(s) from steps 'assigned' to the 
+          * 'average': average of the value(s) from steps 'assigned' to the 
            trajectory timestep.
-        Additionally, if *cutoff* is specified, only steps within this time 
+        Additionally, if ``cutoff`` is specified, only steps within this time 
         of the trajectory timestep are considered in calculating the 
         represenatative.
 
+        If no auxiliary steps were assigned to the timestep, or none fall
+        within the cutoff, representative values are set to ``np.nan``.
+
         Returns
         -------
-        List (of length *n_cols*) of auxiliary value(s) 'representing' the 
-        timestep.
+        List 
+            List (of length ``n_cols``) of auxiliary value(s) 'representing' the 
+            timestep.
         """
         if self.cutoff != -1:
             cutoff_data = np.array([self.ts_data[i] 
@@ -390,7 +410,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     def step_data(self):
         """ Auxiliary values of interest for the current step.
 
-        As taken from the appropariate columns (identified in `data_cols`) of 
+        As taken from the appropariate columns (identified in ``data_cols``) of 
         the full auxiliary data read in for the current step.
         """
         return [self._data[i] for i in self.data_cols]
@@ -408,7 +428,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     def times(self):
         """ List of times of each step in the auxiliary data. 
 
-        Calculated using `dt` and `initial_time` if `constant_dt` is True; 
+        Calculated using ``dt`` and ``initial_time`` if ``constant_dt`` is True; 
         otherwise as read from each auxiliary step in turn. 
         """
         try:
@@ -457,7 +477,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     def data_cols(self):
         """ Get or set list of column indices in auxiliary data containing 
         value(s) of interest. These are the values that will be stored in 
-        *step_data*/*ts_data*/*ts_rep*.
+        ``step_data``, ``ts_data``, and ``ts_rep``.
         """ 
         return self._data_cols
 
@@ -498,21 +518,22 @@ class AuxFileReader(AuxReader):
     auxiliary data from an open file, for use when auxiliary files may be too
     large to read in at once.
 
-    Paramaters
+    Parameters
     ----------
     filename : str
        Location of the file containing the auxiliary data.
     **kwargs
        Other AuxReader options.    
 
+    See also
+    --------
+    :class:`AuxReader`
+
     Attributes
     ----------
     auxfile
        File object for the auxiliary file.
 
-    See also
-    --------
-    :class:`AuxReader`
     """
     
     def __init__(self, filename, **kwargs):
@@ -548,14 +569,14 @@ class AuxFileReader(AuxReader):
         assigned to that timestep (as in the case of less frequent auxiliary
         data), the first auxiliary step after *ts*.
 
-        Paramaters
+        Parameters
         ----------
         ts : :class:`~MDAnalysis.coordinates.base.Timestep` object
             The trajectory timestep before which the auxiliary reader is to
             be positioned.
 
-        Notes
-        -----
+        Note
+        ----
         Works by reading through all timesteps consecutively until correct 
         timestep is reached. Overwrite if this can be done more efficiently.
         """
@@ -575,7 +596,7 @@ class AuxFileReader(AuxReader):
     def go_to_step(self, i):
         """ Move to and read i-th auxiliary step. 
 
-        Paramaters
+        Parameters
         ----------
         i : int
             Step number (0-indexed) to move to
@@ -585,8 +606,8 @@ class AuxFileReader(AuxReader):
         ValueError
             If step index not in valid range.
 
-        Notes
-        -----
+        Note
+        ----
         Works by reading through all steps consecutively until correct step
         is reached. Overwrite if this can be done more efficiently.
         """

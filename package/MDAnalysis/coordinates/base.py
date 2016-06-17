@@ -104,6 +104,9 @@ module. The derived classes must follow the Trajectory API in
 .. autoclass:: IObase
    :members:
 
+.. autoclass:: ProtoReader
+   :members:
+
 .. autoclass:: Reader
    :members:
 
@@ -1319,14 +1322,20 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
         """Add auxiliary data to be read alongside trajectory.
 
         Auxiliary data may be any data timeseries from the trajectory additional
-        to that read in by the trajectory reader. *auxdata* can be an AuxReader 
-        instance, or the data itself as e.g. an array, filename; in the latter 
-        case an appropriate AuxReader is guessed from the data/file format.
+        to that read in by the trajectory reader. *auxdata* can be an 
+        :class:`~MDAnalysis.auxiliary.base.AuxReader` instance, or the data 
+        itself as e.g. an array, filename; in the latter case an appropriate 
+        :class:`~MDAnalysis.auxiliary.base.AuxReader` is guessed from the 
+        data/file format.
+
+        On adding, the AuxReader is initially matched to the current timestep
+        of the trajectory, and will be updated when the trajectory timestep
+        changes (through a call to :meth:`next()` or jumping timesteps with 
+        ``trajectory[i]``).
 
         The representative value of the auxiliary data for each timestep (as
-        calculated by the AuxReader) is stored in the ts.aux namespace as 
-        auxname.
-
+        calculated by the :class:`~MDAnalysis.auxiliary.base.AuxReader`) is 
+        stored in current timestep in the ``ts.aux`` namespace under *auxname*; 
         e.g. to add additional pull force data stored in pull-force.xvg::
 
           u = MDAnalysis.Universe(PDB, XTC)
@@ -1335,8 +1344,16 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
         The representative value for the current timestep may then be accessed 
         as ``u.trajectory.ts.aux.pull``.
 
-        AuxReader is initially matched to the current timestep of the trajectory.
+        See Also
+        --------
+        remove_auxiliary
+        next_as_aux
+        iter_as_aux
 
+        Note
+        ----
+        Auxiliary data is assumed to be time-ordered, with no duplicates. See 
+        the :ref:`Auxiliary API`.
         """
         if auxname in self.aux_list:
             raise ValueError("Auxiliary data with name {name} already "
@@ -1350,8 +1367,13 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
         self.ts = aux.read_ts(self.ts)
     
     def remove_auxiliary(self, auxname):
-        """Close the Reader for auxiliary data *auxname* and remove data 
-        from trajectory."""
+        """Clear data and close the :class:`~MDAnalysis.auxiliary.base.AuxReader`
+        for the auxiliary *auxname*.
+
+        See Also
+        --------
+        add_auxiliary
+        """
         if auxname in self.aux_list:
             self._auxs[auxname].close()            
             del self._auxs[auxname]
@@ -1365,14 +1387,23 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
         return self._auxs.keys()
 
     def next_as_aux(self, auxname):
-        """ Move to the next trajcetory timestep which has a step from the
-        auxiliary *auxname* assigned to it.
-        If the auxiliary steps are less frequent (aux dt > trajectroy dt), 
-        this allows to move forward at the auxiliary pace (rounded to nearest
-        timestep).
+        """ Move to the next timestep to which one or more steps from auxiliary 
+        *auxname* has been assigned.
+
+        If the auxiliary steps are less frequent 
+        (``auxiliary.dt > trajectory.dt``), this allows progression at the 
+        auxiliary pace (rounded to nearest timestep).
+
         If the auxiliary steps are more frequent than the trajectory 
-        timesteps (aux dt < trajectory dt), this works the same as just 
-        calling next() on the trajectory."""
+        (``auxiliary.dt < trajectory.dt``), this works the same as calling 
+        :meth:`next()`. 
+
+        See the :ref:`Auxiliary API`.
+
+        See Also
+        --------
+        iter_as_aux
+        """
         aux = self._auxs[auxname]
         ts = self.ts
         if aux.step > aux.n_steps-1:
@@ -1388,8 +1419,13 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
         return ts 
 
     def iter_as_aux(self, auxname):
-        """Iterate through trajectory steps which have a step from the
-        auxiliary *auxname* assigned to the."""
+        """Iterate through timesteps to which one or more steps from the auxiliary 
+        *auxname* are assigned.
+
+        See Also
+        --------
+        next_as_aux
+        """
         self._reopen()
         self._auxs[auxname]._restart()
         while True:

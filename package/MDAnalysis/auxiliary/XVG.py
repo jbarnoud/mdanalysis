@@ -32,17 +32,17 @@ class XVGReader(base.AuxFileReader):
     xvg files are produced by Gromacs during simulation or analysis, formatted
     for plotting data with Grace.
     
-    Paramaters
+    Parameters
     ----------
     filename : str
        Location of the file containing the auxiliary data.
     **kwargs
        Other AuxReader options.    
 
-    Notes
-    -----
-    The time of each step is assumed to stored in the first column (*time_col*
-    defaults to 0), and data is assumed to be time-ordered.
+    Note
+    ----
+    The time of each step is assumed to stored in the first column (``time_col``
+    defaults to 0), in units of ps, and data is assumed to be time-ordered.
     """
 
     # TODO - swtich to reading file all at once
