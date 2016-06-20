@@ -190,9 +190,9 @@ class TestXVGReader(BaseAuxReaderTest):
                         'data': self.ref.all_data[i]}
             assert_equal(val, ref_data)
 
-    def test_reopen(self):
-        self.reader._reopen()
-        assert_equal(self.reader.step_data, self.ref.all_step_data[0])
+    #def test_reopen(self):
+    #    self.reader._reopen()
+    #    assert_equal(self.reader.step_data, self.ref.all_step_data[0])
 
     @raises(ValueError)
     def test_wrong_n_col_raises_ValueError(self):

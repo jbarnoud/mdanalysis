@@ -200,6 +200,13 @@ The following methods are inherited from
     Read auxiliary steps assigned to trajectory step `ts`; if ``name`` is set, 
     update the representative value stored in `ts`, and return.
 
+  ``move_to_ts(ts)``
+    Move to the auxiliary step before the trajectory timestep *ts*, such that
+    calling 
+    :meth:`~MDAnalysis.auxiliary.base.AuxFileReader.auxfile`_read_next_step` 
+    reads the first step assigned to *ts* or, when auxiliary data are less 
+    frequent and no steps are assigned to *ts*, the first step following *ts*.
+
   ``step_to_frame(step, ts)``
     Return the frame number of the trajectory described by `ts` to which 
     the auxiliary step `step` is assigned.
@@ -231,13 +238,6 @@ and addionally define:
     value(s) from each column. Raise `StopIteration` when attempting to read 
     past last step.
 
-  ``move_to_ts(ts)``
-    Move to the auxiliary step before the trajectory timestep *ts*, such that
-    calling 
-    :meth:`~MDAnalysis.auxiliary.base.AuxFileReader.auxfile`_read_next_step` 
-    reads the first step assigned to *ts* or, when auxiliary data are less 
-    frequent and no steps are assigned to *ts*, the first step following *ts*.
-
   ``count_n_steps()``
     Return the total number of steps.
 
@@ -245,7 +245,8 @@ and addionally define:
     Return the list of times for each step.
 
   ``go_to_step(i)``
-    Move to and read step `i` (0-based) from the auxiliary data.
+    Move to and read step `i` (0-based) from the auxiliary data. Raise 
+    ValueError when i is out of range
 
 Depending on the format of the auxiliary data, it may also be necessary to 
 overwrite the following:
@@ -267,9 +268,6 @@ following (though these may be overwritten by subclasses as appropriate):
 
   ``close()``
     Close ``auxfile``
-
-  ``move_to_ts(ts)``
-    Iterate through all steps until last step before *ts* is reached.
 
   ``go_to_step(i)``
     Iterate through all steps until step `i` is reached.
