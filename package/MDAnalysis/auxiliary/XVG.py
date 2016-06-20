@@ -71,7 +71,7 @@ class XVGReader(base.AuxReader):
 
     See Also
     --------
-    :class:`~MDAnalysis.auxiliary.case.AuxReader`
+    :class:`~MDAnalysis.auxiliary.base.AuxReader`
 
     Note
     ----

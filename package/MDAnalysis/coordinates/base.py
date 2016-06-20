@@ -1338,17 +1338,17 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
         stored in current timestep in the ``ts.aux`` namespace under *auxname*; 
         e.g. to add additional pull force data stored in pull-force.xvg::
 
-          u = MDAnalysis.Universe(PDB, XTC)
-          u.trajectory.add_auxiliary('pull', 'pull-force.xvg')
+            u = MDAnalysis.Universe(PDB, XTC)
+            u.trajectory.add_auxiliary('pull', 'pull-force.xvg')
 
         The representative value for the current timestep may then be accessed 
         as ``u.trajectory.ts.aux.pull``.
 
         See Also
         --------
-        remove_auxiliary
-        next_as_aux
-        iter_as_aux
+        :meth:`remove_auxiliary`
+        :meth:`next_as_aux`
+        :meth:`iter_as_aux`
 
         Note
         ----
@@ -1372,7 +1372,7 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
 
         See Also
         --------
-        add_auxiliary
+        :meth:`add_auxiliary`
         """
         if auxname in self.aux_list:
             self._auxs[auxname].close()            
@@ -1402,7 +1402,7 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
 
         See Also
         --------
-        iter_as_aux
+        :meth:`iter_as_aux`
         """
         aux = self._auxs[auxname]
         ts = self.ts
@@ -1424,7 +1424,7 @@ class ProtoReader(six.with_metaclass(_Readermeta, IObase)):
 
         See Also
         --------
-        next_as_aux
+        :meth:`next_as_aux`
         """
         self._reopen()
         self._auxs[auxname]._restart()

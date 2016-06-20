@@ -93,7 +93,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         Change in time between auxiliary steps (in ps). If not specified, will
         attempt to be determined from auxiliary data; otherwise defaults to 1 ps.
     initial_time : float, optional 
-        Time of first auxilairy step (in ps). If not specified, will attempt to
+        Time of first auxiliary step (in ps). If not specified, will attempt to
         be determined from auxiliary data; otherwise defaults to 0 ps.
     time_col : int, optional
         Index of column in auxiliary data storing time (assumed to be in ps)
@@ -487,7 +487,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     def initial_time(self):
         """ Time corresponding to first auxiliary step. 
 
-        Defaults to 0ps if not provided or read from auxilairy data. """
+        Defaults to 0ps if not provided or read from auxiliary data. """
         return self._initial_time
 
     @property
@@ -529,7 +529,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     @property
     def represent_ts_as(self):
         """ Get or set method by which 'representative' timestep values of 
-        auxilairy data will be calculated.
+        auxiliary data will be calculated.
         """
         return self._represent_ts_as
 

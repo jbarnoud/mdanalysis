@@ -31,7 +31,16 @@ assumed to be time ordered and contain no duplicates.
 Supported formats
 -----------------
 Currently supported formats:
- * XVG (file extension .xvg). Produced by Gromacs during simulation or analysis. 
+
+   +----------------------+--------+-----------+---------------------------------------+
+   | Reader               | Format | Extension | Remarks                               |
+   |                      |        | (if file) |                                       |
+   +======================+========+===========+=======================================+
+   | :class:`.XVGReader`  | XVG    | xvg       | Produced by Gromacs during simulation | 
+   |                      |        |           | or analysis.                          |
+   |                      |        |           | Reads full file on initialisation.    |
+   |                      |        |           |                                       |
+   +----------------------+--------+-----------+---------------------------------------+
 
 .. _Auxiliary API:
 
@@ -41,9 +50,9 @@ Auxiliary readers inherit from the base
 :class:`~MDAnalysis.auxiliary.base.AuxReader`. In stand-alone use they 
 allow iteration over each step in a set of auxiliary data::
 
-  aux = MDAnalysis.auxiliary.xvg.XVGReader('auxdata.xvg')
-  for step in aux:
-      print step
+    aux = MDAnalysis.auxiliary.xvg.XVGReader('auxdata.xvg')
+    for step in aux:
+        print step
 
 A base :class:`~MDAnalysis.auxiliary.base.AuxFileReader` is also provided,
 extending :class:`~MDAnalysis.auxiliary.base.AuxReader` with attributes/methods 
@@ -66,7 +75,7 @@ of the auxiliary step and the ``dt`` and ``offset`` of the trajectory (provided
 through a :class:`~MDAnalysis.coordinates.base.Timestep` instance ''ts'' 
 from the trajectory), as::
 
-  frame = math.floor((time - offset+ts.dt/2)/ts.dt)
+    frame = math.floor((time - offset+ts.dt/2)/ts.dt)
 
 If there are no auxiliary steps assigned to a given timestep (or none within 
 ``cutoff``, if set), the representative 
@@ -79,8 +88,8 @@ may be passed in as a AuxReader instance, or directly as e.g. a filename, in
 which case :func:`~MDAnalysis.auxiliary.core.get_auxreader_for` is used to 
 guess an appropriate reader. e.g.::
 
-  u = MDAnalysis.Universe(PDB, XTC)
-  u.trajectory.add_auxiliary('pullforce', './pull_force.xvg')
+    u = MDAnalysis.Universe(PDB, XTC)
+    u.trajectory.add_auxiliary('pullforce', './pull_force.xvg')
 
 The auxiliary data will be read appropriately as the trajectory frame is 
 updated, and the representative auxiliary value(s) will be available as e.g.
@@ -93,9 +102,9 @@ through only trajectory timesteps to which one or more steps from a given
 auxiliary have been assigned. This may be used when auxiliary data are less
 frequent to avoid representative values set to ``np.nan``::
 
-  u.trajectory.add_auxiliary('low_f', 'low_freq_aux_data.xvg')
-  for ts in u.iter_as_aux():
-    run_analysis(ts.aux.low_f) # do something with auxiliary data
+    u.trajectory.add_auxiliary('low_f', 'low_freq_aux_data.xvg')
+    for ts in u.iter_as_aux():
+        run_analysis(ts.aux.low_f) # do something with auxiliary data
 
 If the auxiliary data are more frequent, 
 :meth:`~MDAnalysis.coordinates.base.ProtoReader.next_as_aux` and
@@ -131,7 +140,7 @@ The following attributes are inherited from
       Change in time between auxiliary steps (in ps). If not specified, will
       attempt to determine from auxiliary data; otherwise defaults to 1 ps.
   ``initial_time``
-      Time of first auxilairy step (in ps). If not specified, will attempt to
+      Time of first auxiliary step (in ps). If not specified, will attempt to
       determine from auxiliary data; otherwise defaults to 0 ps.
   ``time_col``
       Index of column in auxiliary data storing time, assumed to be in ps
