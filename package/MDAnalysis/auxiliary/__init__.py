@@ -154,8 +154,6 @@ The following attributes are inherited from
   ``time``
       Time of current auxiliary step, from the appropriate column of ``_data`` or
       calculated using ``dt`` and ``initial_time``.
-  ``times``
-      List of the time for each auxiliary step.
   ``step_data``
       List of auxiliary values of interest for the current step, from the 
       appropriate column(s) of ``_data``.
@@ -210,6 +208,9 @@ The following methods are inherited from
   ``step_to_frame(step, ts)``
     Return the frame number of the trajectory described by `ts` to which 
     the auxiliary step `step` is assigned.
+
+  ``step_to_time(step)``
+    Return the time of the auxiliary step `step`. 
 
   ``calc_representative()``
     Return the representative value calculated from ``ts_data`` following

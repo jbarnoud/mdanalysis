@@ -119,8 +119,6 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     time : float
         Time of current auxiliary step, as read from data (if present) or 
         calculated using `dt` and `initial_time`.
-    times : list of float
-        List of the times of each auxiliary step.
     step_data : ndarray
         Value(s) from the auxiliary data column(s) of interest (per `data_cols`) 
         for the current step.
@@ -281,7 +279,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         """ Calculate closest trajectory frame for auxiliary step *step*.
 
         Calculated given dt and offset from *ts* as::
-            frame = math.floor((self.times[step]-offset+ts.dt/2.)/ts.dt)
+            frame = math.floor((self.step_to_time(step)-offset+ts.dt/2.)/ts.dt)
 
         Parameters
         ----------
@@ -306,7 +304,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         if step not in range(self.n_steps):
             return None 
         offset = ts.data.get('time_offset', 0)
-        return int(math.floor((self.times[step]-offset+ts.dt/2.)/ts.dt))
+        return int(math.floor((self.step_to_time(step)-offset+ts.dt/2.)/ts.dt))
 
     def move_to_ts(self, ts):
         """ Position auxiliary reader just before trajectory timestep *ts*.
@@ -444,22 +442,39 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
             self._n_steps = self.count_n_steps()
             return self._n_steps
 
-    @property
-    def times(self):
-        """ List of times of each step in the auxiliary data. 
+    def step_to_time(self, i):
+        """ Return time of auxiliary step *i*.
 
         Calculated using ``dt`` and ``initial_time`` if ``constant_dt`` is True; 
-        otherwise as read from each auxiliary step in turn. 
+        otherwise from the list of times as read from the auxiliary data for 
+        each step. 
+
+        Parameters
+        ----------
+        i : int
+            Index (0-based) of step to return time for
+
+        Returns
+        -------
+        float
+            Time (in ps) of step *i*
+
+        Raises
+        ------
+        ValueError
+            When *i* not in valid range
         """
-        try:
-            return self._times
-        except AttributeError:
-            if self.constant_dt:
-                self._times = [i*self.dt+self.initial_time 
-                               for i in range(self.n_steps)]
-            else:
+        if i not in range(self.n_steps):
+            raise ValueError("{0} is not a valid step index (total number of "
+                             "steps is {1})".format(i, self.n_steps))
+        if self.constant_dt:
+            return i*self.dt+self.initial_time
+        else:
+            try:
+                return self._times[i]
+            except AttributeError:
                 self._times = self.read_all_times()
-            return self._times
+                return self._times[i]
 
     @property
     def dt(self):

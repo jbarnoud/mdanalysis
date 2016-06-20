@@ -109,7 +109,9 @@ class BaseAuxReaderTest(object):
     def test_no_constant_dt(self):
         self.reader = self.ref.reader(self.ref.testdata, time_col=0,
                                       constant_dt=False)
-        assert_almost_equal(self.reader.times, self.ref.all_times)
+        for i in range(self.ref.n_steps):
+            assert_almost_equal(self.reader.step_to_time(i), 
+                                self.ref.all_times[i])
 
     @raises(ValueError)
     def test_bad_represent_raises_ValueError(self):
@@ -126,6 +128,10 @@ class BaseAuxReaderTest(object):
     @raises(ValueError)
     def test_go_to_invalid_step_raises_ValueError(self):
         self.reader.go_to_step(self.reader.n_steps)
+
+    @raises(ValueError)
+    def test_invalid_step_to_time_raises_ValueError(self):
+        self.reader.step_to_time(self.reader.n_steps)
 
     def test_not_setting_auxname(self):
         self.reader.read_ts(self.ref.ts_lowf)
@@ -189,10 +195,6 @@ class TestXVGReader(BaseAuxReaderTest):
             ref_data = {'time': self.ref.all_times[i], 
                         'data': self.ref.all_data[i]}
             assert_equal(val, ref_data)
-
-    #def test_reopen(self):
-    #    self.reader._reopen()
-    #    assert_equal(self.reader.step_data, self.ref.all_step_data[0])
 
     @raises(ValueError)
     def test_wrong_n_col_raises_ValueError(self):
