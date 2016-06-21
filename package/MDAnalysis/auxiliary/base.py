@@ -498,7 +498,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
 
     @time_col.setter
     def time_col(self, new):
-        if new == None:
+        if new is None:
             self._time_col=new
             return
         try:

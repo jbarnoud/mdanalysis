@@ -153,6 +153,14 @@ class Namespace(object):
         self.__dict__[key] = value
     def __delattr__(self, key):
         del self.__dict__[key]
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+    def __str__(self):
+        return str(self.__dict__)
+    def __len__(self):
+        return len(self.__dict__)
+    def keys(self):
+        return self.__dict__.keys()
 
 
 class Timestep(object):
