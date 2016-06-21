@@ -4,7 +4,7 @@ from numpy.testing import (assert_equal, assert_raises, assert_almost_equal,
 
 import MDAnalysis as mda
 
-
+from MDAnalysisTests.datafiles import (COORDINATES_XTC, COORDINATES_TOPOLOGY)
 
 @raises(ValueError)
 def test_get_bad_auxreader_format_raises_ValueError():
@@ -243,3 +243,19 @@ class BaseAuxReaderTest(object):
         # check guesser gives us right reader
         reader = mda.auxiliary.core.get_auxreader_for(self.ref.testdata)
         assert_equal(reader, self.ref.reader)
+
+    def test_read_with_trajectory(self):
+        # check we can load with trajectory as expected
+        u = mda.Universe(COORDINATES_TOPOLOGY, COORDINATES_XTC)
+        u.trajectory.add_auxiliary('test', self.ref.testdata, time_col=0)
+        iter_values = [ts.aux.test for ts in u.trajectory]
+        # ref trajectory has same ts as ref auxdata so expect the same values
+        assert_equal(iter_values, self.ref.all_step_data,
+                     "representative value does not match when iterating through "
+                     "all trajectory timesteps")
+        # and so should also be the same if we iter_as_aux
+        aux_iter_values = [ts.aux.test for ts in u.trajectory.iter_as_aux('test')]
+        assert_equal(aux_iter_values, self.ref.all_step_data, 
+                     "representative value does not match when when iterating "
+                     "using iter_as_aux")
+       
