@@ -579,7 +579,7 @@ class AuxFileReader(AuxReader):
 
     def close(self):
         """ Close *auxfile*. """
-        if self.auxfile == None:
+        if self.auxfile is None:
             return
         self.auxfile.close()
         self.auxfile = None

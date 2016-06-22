@@ -23,6 +23,9 @@ XVG auxiliary reader --- :mod:`MDAnalysis.auxiliary.XVG`
 .. autoclass:: XVGReader
    :members:
 
+.. autoclass:: XVGFileReader
+   :members:
+
 """
 
 import numpy as np
@@ -57,7 +60,8 @@ def uncomment(lines):
 class XVGReader(base.AuxReader):
     """ Auxiliary reader to read data from an .xvg file.
 
-    All data from the file will be read and stored on initialisation.
+    All data from the file will be read and stored on initialisation. This is
+    the default reader for .xvg files.
     
     xvg files are produced by Gromacs during simulation or analysis, formatted
     for plotting data with Grace.
@@ -150,12 +154,12 @@ class XVGReader(base.AuxReader):
         return self._auxdata[:,self.time_col]
 
 
-## keep for reference??
 class XVGFileReader(base.AuxFileReader):
-    """ (Old) auxiliary reader to read (step at a time) from an .xvg file.
+    """ Auxiliary reader to read (step at a time) from an .xvg file.
 
-    xvg files are produced by Gromacs during simulation or analysis, formatted
-    for plotting data with Grace.
+    An alternative XVG reader which reads each step from the .xvg file as 
+    needed (rather than reading + storing all from the start), for a lower 
+    memory footprint.     
     
     Parameters
     ----------
@@ -164,15 +168,23 @@ class XVGFileReader(base.AuxFileReader):
     **kwargs
        Other AuxReader options.    
 
+    See Also
+    --------
+    :class:`XVGReader`
+
     Note
     ----
+    The default reader for .xvg files is :class:`XVGReader`.
+
     The time of each step is assumed to stored in the first column (``time_col``
     defaults to 0), in units of ps, and data is assumed to be time-ordered.
     """
 
+    format = 'XVG-F'
+
     def __init__(self, filename, **kwargs):
         time_col = kwargs.pop('time_col', 0)
-        super(XVGReader, self).__init__(filename, time_col=time_col, 
+        super(XVGFileReader, self).__init__(filename, time_col=time_col, 
                                         **kwargs)
 
         

@@ -32,15 +32,20 @@ Supported formats
 -----------------
 Currently supported formats:
 
-   +----------------------+--------+-----------+---------------------------------------+
-   | Reader               | Format | Extension | Remarks                               |
-   |                      |        | (if file) |                                       |
-   +======================+========+===========+=======================================+
-   | :class:`.XVGReader`  | XVG    | xvg       | Produced by Gromacs during simulation | 
-   |                      |        |           | or analysis.                          |
-   |                      |        |           | Reads full file on initialisation.    |
-   |                      |        |           |                                       |
-   +----------------------+--------+-----------+---------------------------------------+
+   +-------------------------+--------+-----------+---------------------------------------+
+   | Reader                  | Format | Extension | Remarks                               |
+   |                         |        | (if file) |                                       |
+   +=========================+========+===========+=======================================+
+   | :class:`.XVGReader`     | XVG    | xvg       | Produced by Gromacs during simulation | 
+   |                         |        |           | or analysis.                          |
+   |                         |        | (default) | Reads full file on initialisation.    |
+   +-------------------------+--------+-----------+---------------------------------------+
+   | :class:`.XVGFileReader` | XVG-F  | xvg       | Alternate xvg file reader, reading    |
+   |                         |        |           | each step from the file in turn for a |
+   |                         |        |           | lower memory footprint.               |
+   |                         |        |           | :class:`XVGReader` is the default     |
+   |                         |        |           | reader for .xvg files.                |
+   +-------------------------+--------+-----------+---------------------------------------+
 
 .. _Auxiliary API:
 
