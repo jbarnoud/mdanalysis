@@ -31,6 +31,7 @@ Base classes for deriving all auxiliary data readers. See the API in :mod:`MDAna
 
 import six
 
+import os
 import numpy as np
 import math
 import warnings
@@ -73,9 +74,9 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
 
     Parameters
     ----------
-    name : str, optional
+    auxname : str, optional
         Name for auxiliary data. When added to a trajectory, the representative 
-        auxiliary value(s) for the timestep are stored as ``ts.aux.name``.
+        auxiliary value(s) for the timestep are stored as ``ts.aux.auxname``.
     represent_ts_as : {'closest', 'average'}
         How to calculate representative value of auxiliary data for a 
         trajectory timestep. Currently available:
@@ -141,12 +142,12 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     # update when add new options
     represent_options = ['closest', 'average']
       
-    def __init__(self, represent_ts_as='closest', name=None, cutoff=-1, 
+    def __init__(self, represent_ts_as='closest', auxname=None, cutoff=-1, 
                  dt=1, initial_time=0, time_col=None, data_cols=None, 
                  constant_dt=True):
-        # allow name to be optional for when using reader separate from
+        # allow quxname to be optional for when using reader separate from
         # trajectory.
-        self.name = name
+        self.auxname = auxname
 
         self.represent_ts_as = represent_ts_as
 
@@ -228,8 +229,8 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         'representative value' for the timestep from the data in each of these 
         auxiliary steps.
 
-        If ``name`` is set, the representative value will also be added to the
-        timestep as ``ts.aux.name``.
+        If ``auxname`` is set, the representative value will also be added to the
+        timestep as ``ts.aux.auxname``.
 
         Parameters
         ----------
@@ -240,7 +241,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         Returns
         -------
         :class:`~MDAnalysis.coordinates.base.Timestep`
-            If ``name`` is set, the representative auxiliary value in ``ts.aux`` 
+            If ``auxname`` is set, the representative auxiliary value in ``ts.aux`` 
             will be updated appropriately.
 
         Note
@@ -265,12 +266,12 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         self.ts_rep = self.calc_representative()
 
         # check we have a name to set in ts
-        if self.name:
-            setattr(ts.aux, self.name, self.ts_rep)
+        if self.auxname:
+            setattr(ts.aux, self.auxname, self.ts_rep)
         else:
             # assume we don't want to store in ts. Should only happen when
             # using AuxReader independantly of a trajectory.
-            warnings.warn("Auxiliary name not set, assuming you don't want to "
+            warnings.warn("Auxiliary auxname not set, assuming you don't want to "
                           "store representative value in *ts*.")
         return ts
 
@@ -545,7 +546,35 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     def __del__(self):
         self.close()
 
-    
+    def get_description(self):
+        """Get the args/kwargs necessary for dupicating the AuxReader
+
+        The resulting description may be passed to 'add_auxiliary' to 
+        reload an auxiliary into a trajectory.
+
+        Returns
+        -------
+        dict
+            Of args/kwargs that can be used to recreate the AuxReader
+        """
+        description = {key.lstrip('_'): val 
+                       for key, val in self.__dict__.items()
+                       if key in ['constant_dt', 'cutoff', '_time_col', 
+                                  '_initial_time', '_represent_ts_as', '_dt',
+                                  '_data_cols', 'auxname']}
+        description['format'] = self.format
+        description['auxdata'] = self._data_input
+        return description
+
+    def __eq__(self, other):
+        for attr in ['_represent_ts_as', 'cutoff', '_dt', '_initial_time',
+                     '_time_col', '_data_cols', 'constant_dt', 'auxname', 
+                     'format', '_data_input']:
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
+
+
 class AuxFileReader(AuxReader):
     """ Base class for auxiliary readers that read from file.
 
@@ -574,7 +603,7 @@ class AuxFileReader(AuxReader):
     def __init__(self, filename, **kwargs):
         self.filename = filename
         self.auxfile = open(filename)
-        
+        self._data_input = os.path.abspath(filename)
         super(AuxFileReader, self).__init__(**kwargs)
 
     def close(self):
