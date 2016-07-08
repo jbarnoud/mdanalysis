@@ -141,11 +141,16 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
 
     # update when add new options
     represent_options = ['closest', 'average']
+
+    # list of attributes required to recreate the auxiliary
+    required_attrs = ['_represent_ts_as', 'cutoff', '_dt', '_initial_time',
+                      '_time_col', '_data_cols', 'constant_dt', 'auxname', 
+                      'format', '_data_input']
       
     def __init__(self, represent_ts_as='closest', auxname=None, cutoff=-1, 
                  dt=1, initial_time=0, time_col=None, data_cols=None, 
                  constant_dt=True):
-        # allow quxname to be optional for when using reader separate from
+        # allow auxname to be optional for when using reader separate from
         # trajectory.
         self.auxname = auxname
 
@@ -557,19 +562,20 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         dict
             Of args/kwargs that can be used to recreate the AuxReader
         """
-        description = {key.lstrip('_'): val 
-                       for key, val in self.__dict__.items()
-                       if key in ['constant_dt', 'cutoff', '_time_col', 
-                                  '_initial_time', '_represent_ts_as', '_dt',
-                                  '_data_cols', 'auxname']}
-        description['format'] = self.format
-        description['auxdata'] = self._data_input
+        description = {}
+        for attr in self.required_attrs:
+            # '_data_input' is passed to add_auxiliary as 'auxdata' so change
+            # that here. Should probably fix so we don't have to do this...
+            if attr == '_data_input':
+                description['auxdata'] = getattr(self, attr)
+            else:
+                # assumes all required attributes are passed in to add_auxiliary
+                # with the same name/keyword, minus leading underscores
+                description[attr.lstrip('_')] = getattr(self, attr)
         return description
 
     def __eq__(self, other):
-        for attr in ['_represent_ts_as', 'cutoff', '_dt', '_initial_time',
-                     '_time_col', '_data_cols', 'constant_dt', 'auxname', 
-                     'format', '_data_input']:
+        for attr in self.required_attrs:
             if getattr(self, attr) != getattr(other, attr):
                 return False
         return True
