@@ -239,4 +239,4 @@ class XVGFileReader(base.AuxFileReader):
         times = []
         for step in self:
             times.append(self.time)
-        return times
+        return np.array(times)
