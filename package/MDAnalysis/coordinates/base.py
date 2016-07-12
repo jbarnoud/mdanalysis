@@ -136,32 +136,12 @@ from . import (
 )
 from ..core import flags
 from .. import units
-from ..lib.util import asiterable
+from ..lib.util import asiterable, Namespace
 from . import core
 from .. import NoDataError
 
 from ..auxiliary.base import AuxReader
 from ..auxiliary.core import get_auxreader_for
-
-class Namespace(object):
-    """Class to allow storing attributes in new namespace. """
-    def __getattr__(self, key):
-        # a.this causes a __getattr__ call for key = 'this' 
-        return self.__dict__[key]
-    def __setattr__(self, key, value):
-        # a.this = 10 causes a __setattr__ call for key='this' value=10
-        self.__dict__[key] = value
-    def __delattr__(self, key):
-        del self.__dict__[key]
-    def __eq__(self, other):
-        return self.__dict__ == other.__dict__
-    def __str__(self):
-        return str(self.__dict__)
-    def __len__(self):
-        return len(self.__dict__)
-    def keys(self):
-        return self.__dict__.keys()
-
 
 class Timestep(object):
     """Timestep data for one frame
