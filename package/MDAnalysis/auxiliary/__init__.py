@@ -205,7 +205,7 @@ The following methods are inherited from
   ``__iter__()``
     Allow iteration through each auxiliary step.
 
-  ``go_to_first_step()``
+  ``rewind()``
     Reposition to first step.
 
   ``read_ts(ts)``

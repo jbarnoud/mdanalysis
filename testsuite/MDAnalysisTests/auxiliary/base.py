@@ -112,10 +112,10 @@ class BaseAuxReaderTest(object):
         # on first loading we should start at step 0
         self.check_step(0)
 
-    def test_go_to_first_step(self):
+    def test_rewind(self):
         self.reader.next()
-        # go_to_first_step should read step 0
-        self.reader.go_to_first_step()
+        # rewind should read step 0
+        self.reader.rewind()
         self.check_step(0)
 
     def test_next_to_second_frame(self):

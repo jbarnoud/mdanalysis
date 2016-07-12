@@ -186,7 +186,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
             self._initial_time = self.time
             self._read_next_step()
             self._dt = self.time - self._initial_time
-            self.go_to_first_step()
+            self.rewind()
 
     def __len__(self):
         """ Number of steps in auxiliary data. """
@@ -212,7 +212,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         # Overwrite as appropriate
         self.step = -1
                 
-    def go_to_first_step(self):
+    def rewind(self):
         """ Return to and read first step. """
         # Overwrite as appropriate
         #  could also use go_to_step(0)
@@ -653,7 +653,7 @@ class AuxFileReader(AuxReader):
         if i not in range(self.n_steps):
             raise ValueError("Step index {0} is not valid for auxiliary "
                              "(num. steps {1}!".format(i, self.n_steps))
-        value = self.go_to_first_step()
+        value = self.rewind()
         while self.step != i:
             value = self.next()
         return value

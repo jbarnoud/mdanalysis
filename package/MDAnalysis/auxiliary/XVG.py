@@ -111,7 +111,7 @@ class XVGReader(base.AuxReader):
             self._data = self._auxdata[new_step]
             self.step = new_step
         else:
-            self.go_to_first_step()
+            self.rewind()
             raise StopIteration
 
     def go_to_step(self, i):
@@ -203,7 +203,7 @@ class XVGFileReader(base.AuxFileReader):
                                  '{2}'.format(self.step, len(self._data),
                                              self.n_cols))
         else:
-            self.go_to_first_step()
+            self.rewind()
             raise StopIteration
 
 
