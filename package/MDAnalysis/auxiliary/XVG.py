@@ -89,7 +89,7 @@ class XVGReader(base.AuxReader):
 
     format = "XVG"
 
-    def __init__(self, filename, **kwargs):
+    def __init__(self, filename, time_col=0, **kwargs):
         self._data_input = os.path.abspath(filename)
         with open(filename) as xvg_file:
             lines = xvg_file.readlines()
@@ -102,8 +102,6 @@ class XVGReader(base.AuxReader):
                 raise ValueError('Step {0} has {1} columns instead of '
                                  '{2}'.format(i, auxdata[i], auxdata[0]))
         self._auxdata = np.array(auxdata)
-        # default to time in first column, if not otherwise specified
-        time_col = kwargs.pop('time_col', 0)
         super(XVGReader, self).__init__(time_col=time_col, **kwargs)
 
     def _read_next_step(self):
@@ -184,8 +182,7 @@ class XVGFileReader(base.AuxFileReader):
 
     format = 'XVG-F'
 
-    def __init__(self, filename, **kwargs):
-        time_col = kwargs.pop('time_col', 0)
+    def __init__(self, filename, time_col=0, **kwargs):
         super(XVGFileReader, self).__init__(filename, time_col=time_col, 
                                         **kwargs)
 
