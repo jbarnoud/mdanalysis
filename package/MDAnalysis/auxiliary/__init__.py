@@ -117,6 +117,10 @@ If the auxiliary data are more frequent,
 :meth:`~MDAnalysis.coordinates.base.ProtoReader.__iter__`.
 
 
+AuxStep class
+~~~~~~~~~~~~~
+[[TBA]]
+
 AuxReader class
 ~~~~~~~~~~~~~~~
 
