@@ -15,16 +15,16 @@ class BaseAuxReference(object):
         self.all_data = [[0, 0, 1], [1, 2, 2], [2, 4, 4], [3, 6, 8], [4, 8, 16]]
 
         # make time first column
-        self.time_col = 0
+        self.time_selector = 0
         self.all_times = [i[0] for i in self.all_data]
         self.all_step_data = [[i[1], i[2]] for i in self.all_data]
 
-        # for testing data col selection
-        self.set_data_cols = [1]
-        self.set_data_cols_vals = [[i[1]] for i in self.all_data]
+        # for testing data selection
+        self.set_data_selector = [1]
+        self.set_data_selector_vals = [[i[1]] for i in self.all_data]
 
         self.n_steps = len(self.all_data)
-        self.n_cols = len(self.all_data[0])
+        self.n_cols = len(self.all_data[0]) 
         self.dt = self.all_times[1] - self.all_times[0]
         self.initial_time = self.all_times[0]
 
@@ -69,8 +69,8 @@ class BaseAuxReference(object):
         self.highf['last'] = 0
 
         self.description= {'dt':self.dt, 'represent_ts_as':'closest', 
-                           'initial_time':0, 'time_col':self.time_col,
-                           'data_cols':[1,2], 'constant_dt':True, 
+                           'initial_time':0, 'time_selector':self.time_selector,
+                           'data_selector':None, 'constant_dt':True, 
                            'cutoff':-1,}
 
 
@@ -78,7 +78,7 @@ class BaseAuxReaderTest(object):
     def __init__(self, reference):
         self.ref = reference
         # time assumed to be in first column!
-        self.reader = self.ref.reader(self.ref.testdata, time_col=0, 
+        self.reader = self.ref.reader(self.ref.testdata, time_selector=0, 
                                       auxname='test')
         self.ref.description['auxname'] = 'test'
 
@@ -88,10 +88,6 @@ class BaseAuxReaderTest(object):
     def test_n_steps(self):
         assert_equal(len(self.reader), self.ref.n_steps,
                      "number of steps does not match")
-
-    def test_n_cols(self):
-        assert_equal(self.reader.n_cols, self.ref.n_cols,
-                     "number of columns does not match")
 
     def test_dt(self):
         assert_equal(self.reader.dt, self.ref.dt,
@@ -140,17 +136,17 @@ class BaseAuxReaderTest(object):
             # also check values set in reader 
             self.check_step(i)
 
-    def test_data_cols(self):
-        # reload reader, imposing a selection for which columns to
+    def test_data_selector(self):
+        # reload reader, imposing a selection for which values to
         # include in step_data
         self.reader = self.ref.reader(self.ref.testdata, 
-                                      data_cols=self.ref.set_data_cols)
+                                      data_selector=self.ref.set_data_selector)
         for i, val in enumerate(self.reader):
-            assert_equal(val['data'], self.ref.set_data_cols_vals[i],
+            assert_equal(val['data'], self.ref.set_data_selector_vals[i],
                          "step_data for step {0} does not match".format(i))
 
-    def test_no_time_col(self):
-        # reload reader, without setting time column; pass dt and initial_time
+    def test_no_time_selector(self):
+        # reload reader, without setting time selector; pass dt and initial_time
         # to compensate
         self.reader = self.ref.reader(self.ref.testdata, dt=self.ref.dt, 
                                       initial_time=self.ref.initial_time)
@@ -160,7 +156,7 @@ class BaseAuxReaderTest(object):
 
     def test_no_constant_dt(self):
         # reload reader, without assuming constant dt
-        self.reader = self.ref.reader(self.ref.testdata, time_col=0,
+        self.reader = self.ref.reader(self.ref.testdata, time_selector=0,
                                       constant_dt=False)
         for i in range(self.ref.n_steps):
             assert_almost_equal(self.reader.step_to_time(i), 
@@ -172,12 +168,12 @@ class BaseAuxReaderTest(object):
         self.reader.represent_ts_as = 'invalid-option'
 
     @raises(ValueError)
-    def test_time_col_out_of_range_raises_ValueError(self):
-        self.reader.time_col = self.reader.n_cols 
+    def test_time_selector_out_of_range_raises_ValueError(self):
+        self.reader.time_selector = self.ref.n_cols 
 
     @raises(ValueError)
-    def test_data_col_out_of_range_raises_ValueError(self):
-        self.reader.data_cols = [self.reader.n_cols]
+    def test_data_selector_out_of_range_raises_ValueError(self):
+        self.reader.data_selector = [self.ref.n_cols]
 
     @raises(ValueError)
     def test_go_to_invalid_step_raises_ValueError(self):
@@ -252,7 +248,7 @@ class BaseAuxReaderTest(object):
     def test_read_with_trajectory(self):
         # check we can load with trajectory as expected
         u = mda.Universe(COORDINATES_TOPOLOGY, COORDINATES_XTC)
-        u.trajectory.add_auxiliary('test', self.ref.testdata, time_col=0)
+        u.trajectory.add_auxiliary('test', self.ref.testdata, time_selector=0)
         iter_values = [ts.aux.test for ts in u.trajectory]
         # ref trajectory has same ts as ref auxdata so expect the same values
         assert_equal(iter_values, self.ref.all_step_data,
