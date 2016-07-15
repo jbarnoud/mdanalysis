@@ -294,7 +294,7 @@ class XVGFileReader(base.AuxFileReader):
                 raise ValueError('{} not a valid index for data with {} '
                                  'columns'.format(key, self._n_cols))
         else:
-            return [self._select_data(i) for i in key] 
+            return np.array([self._select_data(i) for i in key])
 
     def _empty_data(self):
-        return [np.nan]*len(self.step_data)
+        return np.array([np.nan]*len(self.step_data))

@@ -36,7 +36,8 @@ class BaseAuxReference(object):
         self.lowf_ts = mda.coordinates.base.Timestep(0, dt=lowf*self.dt)
         self.lowf_ts.frame = 1
         # should correspond to steps 1 and 2...
-        self.lowf['data'] = [self.all_step_data[1], self.all_step_data[2]]
+        self.lowf['data'] = {-1: self.all_step_data[1], 
+                             0: self.all_step_data[2]}
         self.lowf['rep'] = self.all_step_data[2]
         self.lowf['last'] = 2    # should be on this step after reading ts
         # for testing average + cutoff calc_representative option...
@@ -51,7 +52,7 @@ class BaseAuxReference(object):
                                                   time_offset=self.dt*offset)
         self.offset_ts.frame = 1
         # should correspond to step 1
-        self.offset['data'] = [self.all_step_data[1]]
+        self.offset['data'] = {-0.25: self.all_step_data[1]}
         self.offset['rep'] = self.all_step_data[1]
         self.offset['last'] = 1
         # for testing cutoff...
@@ -64,7 +65,7 @@ class BaseAuxReference(object):
         self.highf_ts = mda.coordinates.base.Timestep(0, dt=highf*self.dt)
         self.highf_ts.frame = 1
         # should fall between step 0 and 1 - no steps assigned to this ts
-        self.highf['data'] = []
+        self.highf['data'] = {}
         self.highf['rep'] = [np.nan, np.nan]
         self.highf['last'] = 0
 
@@ -192,9 +193,9 @@ class BaseAuxReaderTest(object):
         assert_equal(self.ref.lowf_ts.aux.__dict__, aux_before.__dict__)
 
     def check_timestep(self, ref):
-        assert_equal(self.reader.ts_data, ref['data'],
+        assert_equal(self.reader.frame_data, ref['data'],
                     "List of step_data for steps assigned to ts does not match")
-        assert_almost_equal(self.reader.ts_rep, ref['rep'],
+        assert_almost_equal(self.reader.frame_rep, ref['rep'],
                             err_msg="Representative value for ts does not math")
         assert_equal(self.reader.step, ref['last'],
                      "Auxiliary ends on wrong step after reading ts")
@@ -221,14 +222,14 @@ class BaseAuxReaderTest(object):
     def test_rep_as_average(self):
         self.reader.represent_ts_as = 'average'
         self.reader.read_ts(self.ref.lowf_ts)
-        assert_almost_equal(self.reader.ts_rep, self.ref.lowf['average'], 
+        assert_almost_equal(self.reader.frame_rep, self.ref.lowf['average'], 
                             err_msg="Representative value does not match when "
                                     "using with option 'average'")
 
     def test_cutoff_closest(self):
         self.reader.cutoff = self.ref.cutoff
         self.reader.read_ts(self.ref.offset_ts)
-        assert_almost_equal(self.reader.ts_rep, self.ref.offset['cutoff_closest'],
+        assert_almost_equal(self.reader.frame_rep, self.ref.offset['cutoff_closest'],
                             err_msg="Representative value does not match when "
                                     "applying cutoff")
 
@@ -236,7 +237,7 @@ class BaseAuxReaderTest(object):
         self.reader.cutoff = self.ref.cutoff
         self.reader.repreesnt_ts_as = 'average'
         self.reader.read_ts(self.ref.lowf_ts)
-        assert_almost_equal(self.reader.ts_rep, self.ref.lowf['cutoff_average'],
+        assert_almost_equal(self.reader.frame_rep, self.ref.lowf['cutoff_average'],
                             err_msg="Representative value does not match when "
                                     "using option 'average' and applying cutoff")
 

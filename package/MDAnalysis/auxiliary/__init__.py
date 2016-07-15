@@ -173,14 +173,11 @@ The following attributes are inherited from
   ``step_data``
       Auxiliary values of interest for the current step, determined from 
       ``_data`` using ``_select_data()``/``data_selector``.
-  ``ts_data``
-      Numpy array of `step_data` from each auxiliary step assigned to the 
+  ``frame_data``
+      `step_data` from each auxiliary step assigned to the 
       last-read trajectory timestep.
-  ``ts_diff``
-      List of difference in time between the last-read trajectory timestep
-      and each auxiliary step assigned to it.
-  ``ts_rep``
-      Represenatative value of auxiliary data for last-read trajectory timestep.
+  ``frame_rep``
+      Represenatative value(s) of auxiliary data for last-read trajectory timestep.
 
 
 :class:`~MDAnalaysis.auxiliary.base.AuxFileReader` additionally provides:
@@ -229,7 +226,7 @@ The following methods are inherited from
     Return the time of the auxiliary step `step`. 
 
   ``calc_representative()``
-    Return the representative value calculated from ``ts_data`` following
+    Return the representative value calculated from ``step_data`` following
     the method specified by ``represent_ts_as`` and ``cutoff``.
 
   ``__enter__()``

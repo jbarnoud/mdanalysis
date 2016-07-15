@@ -124,13 +124,10 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     step_data : ndarray
         Value(s) of auxiliary data of interest for the current step (based on
         ``data_selector``. 
-    ts_data : ndarray
+   ** frame_data : ndarray
         List of 'step_data' from each auxiliary step assigned to the last-read
         trajectory timestep.
-    ts_diff : list
-        List of difference in time between the last-read trajectory timestep
-        and each auxiliary step assigned to it.
-    ts_rep : list of float
+    frame_rep : list of float
         Represenatative value of auxiliary data for current trajectory timestep.
 
     Note
@@ -156,8 +153,8 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         self.represent_ts_as = represent_ts_as
         self.cutoff = cutoff
 
-        self.ts_data = None
-        self.ts_rep = None
+        self.frame_data = None
+        self.frame_rep = None
 
         self._initial_time = initial_time
         self._dt = dt
@@ -252,15 +249,15 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
                 and self.step_to_frame(self.step+1, ts) >= ts.frame):
             self.move_to_ts(ts)
 
-        self._reset_ts() # clear previous ts data
+        self._reset_frame_data() # clear previous frame data
         while self.step_to_frame(self.step+1, ts) == ts.frame:
             self._read_next_step()
-            self._add_step_to_ts(ts.time)
-        self.ts_rep = self.calc_representative()
+            self._add_step_to_frame_data(ts.time)
+        self.frame_rep = self.calc_representative()
 
         # check we have a name to set in ts
         if self.auxname:
-            setattr(ts.aux, self.auxname, self.ts_rep)
+            setattr(ts.aux, self.auxname, self.frame_rep)
         else:
             # assume we don't want to store in ts. Should only happen when
             # using AuxReader independantly of a trajectory.
@@ -338,13 +335,11 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         raise NotImplementedError(
             "BUG: Override go_to_step() in auxiliary reader!")
 
-    def _reset_ts(self):
-        """ Clear existing timestep data. """
-        self.ts_data = np.array([])
-        self.ts_diffs = []
+    def _reset_frame_data(self):
+        self.frame_data = {}
 
-    def _add_step_to_ts(self, ts_time):
-        """ Update ``ts_data`` and ``ts_diffs`` with values for the current step.
+    def _add_step_to_frame_data(self, ts_time):
+        """ Update ``frame_data`` with values for the current step.
 
         Parameters
         ----------
@@ -352,14 +347,11 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
             the time of the timestep the current step is being 'added to'. Used
             to calculate difference in time between current step and timestep.
         """
-        if len(self.ts_data) == 0:
-            self.ts_data = np.array([self.step_data])
-        else:
-            self.ts_data = np.append(self.ts_data, [self.step_data], axis=0)
-        self.ts_diffs.append(abs(self.time - ts_time))
+        time_diff = self.time - ts_time
+        self.frame_data[time_diff] = self.step_data
 
     def calc_representative(self):
-        """ Calculate represenatative auxiliary value(s) from *ts_data*.
+        """ Calculate represenatative auxiliary value(s) from *frame_data*.
         
         Currently available options for calculating represenatative value are:
           * 'closest': default; the value(s) from the step closest to in time to 
@@ -377,22 +369,24 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         -------
         Numpy array of auxiliary value(s) 'representing' the timestep.
         """
-        if self.cutoff != -1:
-            cutoff_data = np.array([self.ts_data[i] 
-                                    for i,d in enumerate(self.ts_diffs)
-                                    if d <= self.cutoff])
-            cutoff_diffs = [d for d in self.ts_diffs if d <= self.cutoff]
+        if self.cutoff == -1:
+            cutoff_data = self.frame_data
         else:
-            cutoff_data = self.ts_data
-            cutoff_diffs = self.ts_diffs
+            cutoff_data = {key: val for key, val in self.frame_data.items()
+                           if abs(key) <= self.cutoff}
         if len(cutoff_data) == 0:
             # no steps are 'assigned' to this trajectory frame, so return
             # values of ``np.nan``
             value = self._empty_data()
         elif self.represent_ts_as == 'closest':
-            value = cutoff_data[np.argmin(cutoff_diffs)]
+            min_diff = min([abs(i) for i in cutoff_data])
+            # temp fix to get right sign. Go with -ve over +ve.
+            try:
+                value = cutoff_data[-min_diff]
+            except KeyError:
+                value = cutoff_data[min_diff]
         elif self.represent_ts_as == 'average':
-            value = np.mean(cutoff_data, axis=0)
+            value = np.mean(np.array([val for val in cutoff_data.values()]))
         return value
     
     def __enter__(self):
@@ -504,7 +498,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     def data_selector(self):
         """ Get or set key(s) to select values of interest from full set of 
         auxiliary data. These are the values that will be stored in 
-        ``step_data``, ``ts_data``, and ``ts_rep``.
+        ``step_data``, ``frame_data``, and ``frame_rep``.
         """ 
         return self._data_selector
 
