@@ -500,7 +500,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         try:
             return self._n_steps
         except AttributeError:
-            self._n_steps = self.count_n_steps()
+            self._n_steps = self._count_n_steps()
             return self._n_steps
 
     def step_to_time(self, i):

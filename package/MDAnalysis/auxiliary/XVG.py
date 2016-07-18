@@ -140,6 +140,7 @@ class XVGReader(base.AuxReader):
                 raise ValueError('Step {0} has {1} columns instead of '
                                  '{2}'.format(i, auxdata[i], auxdata[0]))
         self._auxdata = np.array(auxdata)
+        self._n_steps = len(self._auxdata)
         super(XVGReader, self).__init__(time_selector=time_selector, 
                                         data_selector=data_selector, **kwargs)
 
@@ -173,16 +174,6 @@ class XVGReader(base.AuxReader):
                              "(num. steps {1})".format(i, self.n_steps))
         self.auxstep.step = i-1
         self.next()
-
-    def count_n_steps(self):
-        """ Count total number of steps.
-
-        Returns
-        -------
-        int
-            Total number of steps
-        """
-        return len(self._auxdata)
 
     def read_all_times(self):
         """ Get list of time of each step.
@@ -227,7 +218,7 @@ class XVGFileReader(base.AuxFileReader):
     def __init__(self, filename, time_selector=0, **kwargs):
         super(XVGFileReader, self).__init__(filename, time_selector=time_selector, 
                                             **kwargs)
-        
+
     def _read_next_step(self):
         """ Read next recorded step in xvg file. """
         line = self.auxfile.readline()
@@ -253,7 +244,7 @@ class XVGFileReader(base.AuxFileReader):
             self.rewind()
             raise StopIteration
 
-    def count_n_steps(self):
+    def _count_n_steps(self):
         """ Iterate through all steps to count total number.
 
         Returns
@@ -261,7 +252,6 @@ class XVGFileReader(base.AuxFileReader):
         int
             Total number of steps
         """
-
         if self.constant_dt:
             # will have to iterate through all to built times list anyway
             return len(self.read_all_times())

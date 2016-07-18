@@ -254,19 +254,22 @@ and addionally define:
     value(s) from each column. Raise `StopIteration` when attempting to read 
     past last step.
 
-  ``count_n_steps()``
-    Return the total number of steps.
-
-  ``read_all_times()``
-    Return the list of times for each step.
-
   ``go_to_step(i)``
     Move to and read step `i` (0-based) from the auxiliary data. Raise 
     ValueError when i is out of range
 
 
 Depending on the format of the auxiliary data, it may also be necessary to 
-overwrite the following:
+define/overwrite the following:
+
+  ``read_all_times()``
+    Return the list of times for each step (only required if ``constant_dt``
+    may be false).
+
+  ``count_n_steps()``
+    Return the total number of steps (only required if `_n_steps` not otherwise
+    set during `__init__`).
+
   ``_restart()``
     Reposition before the first step
 
