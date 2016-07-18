@@ -294,7 +294,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
     def rewind(self):
         """ Return to and read first step. """
         # Overwrite as appropriate
-        #  could also use go_to_step(0)
+        #  could also use _go_to_step(0)
         self._restart()
         self._read_next_step()
                 
@@ -421,13 +421,36 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         if step == -1:
             self._restart()
         else:
-            self.go_to_step(step)
+            self._go_to_step(step)
 
-    def go_to_step(self, i):
+    def __getitem__(self, i):
+        """ Return the AuxStep corresponding to the *i*-th auxiliary step(s)
+        (0-based).
+        
+        *i* may be an integer (in which case the corresponding step is 
+        returned) or a slice (in which case an iterator is returned). """
+        if isinstance(i, int):
+            return self._go_to_step(i)
+        elif isinstance(i, (list, np.ndarray)):
+            return self._list_iter(i)
+        elif isinstance(i, slice):
+            return self._slice_iter(i)
+
+    def _list_iter(self, i):
+        for j in i:
+            yield self._go_to_step(j)
+
+    def _slice_iter(self, i):
+        #TODO - check slice is valid etc
+        for j in range(i.start, i.stop, i.step):
+            yield self._go_to_step(j)
+            
+
+    def _go_to_step(self, i):
         """ Move to and read i-th auxiliary step. """
         # Need to define in each auxiliary reader
         raise NotImplementedError(
-            "BUG: Override go_to_step() in auxiliary reader!")
+            "BUG: Override _go_to_step() in auxiliary reader!")
 
     def _reset_frame_data(self):
         self.frame_data = {}
@@ -678,7 +701,7 @@ class AuxFileReader(AuxReader):
         self.auxfile = open(self.filename)
         self.auxstep.step = -1
 
-    def go_to_step(self, i):
+    def _go_to_step(self, i):
         """ Move to and read i-th auxiliary step. 
 
         Parameters

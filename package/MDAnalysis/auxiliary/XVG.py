@@ -156,7 +156,7 @@ class XVGReader(base.AuxReader):
             self.rewind()
             raise StopIteration
 
-    def go_to_step(self, i):
+    def _go_to_step(self, i):
         """ Move to and read i-th auxiliary step. 
 
         Parameters
@@ -174,6 +174,7 @@ class XVGReader(base.AuxReader):
                              "(num. steps {1})".format(i, self.n_steps))
         self.auxstep.step = i-1
         self.next()
+        return self.auxstep
 
     def read_all_times(self):
         """ Get list of time of each step.

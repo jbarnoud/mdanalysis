@@ -254,7 +254,7 @@ and addionally define:
     value(s) from each column. Raise `StopIteration` when attempting to read 
     past last step.
 
-  ``go_to_step(i)``
+  ``_go_to_step(i)``
     Move to and read step `i` (0-based) from the auxiliary data. Raise 
     ValueError when i is out of range
 
@@ -289,7 +289,7 @@ following (though these may be overwritten by subclasses as appropriate):
   ``close()``
     Close ``auxfile``
 
-  ``go_to_step(i)``
+  ``_go_to_step(i)``
     Iterate through all steps until step `i` is reached.
 
   ``_reopen()``
