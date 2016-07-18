@@ -58,6 +58,18 @@ def uncomment(lines):
         # if comment_position == 0, then the line is empty
 
 class XVGStep(base.AuxStep):
+    """ AuxStep class for .xvg file format 
+
+    Parameters
+    ----------
+    time_selector : int
+        Index of column in .xvg file storing time, assumed to be in ps. Default
+        value is 0. 
+    data_selector : list of int
+        Indices of columns in .xvg file containing data of interest to be 
+        stored in ``step_data``. Default value is ``None``, which will select 
+        all columns but that containing time.
+    """
     def _select_time(self, key):
         if key is None:
             # here so that None is a valid value; just return
@@ -96,13 +108,6 @@ class XVGReader(base.AuxReader):
     ----------
     filename : str
         Location of the file containing the auxiliary data.
-    time_selector : int
-        Index of column in .xvg file storing time, assumed to be in ps. Default
-        value is 0. 
-    data_selector : list of int
-        Indices of columns in .xvg file containing data of interest to be 
-        stored in ``step_data``. Default value is ``None``, which will select 
-        all columns but that containing time.
     **kwargs
        Other AuxReader options.    
 

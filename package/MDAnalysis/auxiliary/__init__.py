@@ -141,6 +141,10 @@ The following attributes are inherited from
   ``cutoff``
       Cutoff (in ps) for ignoring auxiliary steps when calculating 
       representative value(s) for a timestep.
+  ``auxstep``
+      The :class:`~MDAnalysis.auxiliary.base.AuxStep` object to store data for
+      the current step. Customised for each auxiliary format to allow selection
+      of data.
   ``dt``
       Change in time between auxiliary steps (in ps). If not specified, will
       attempt to determine from auxiliary data; otherwise defaults to 1 ps.
@@ -181,6 +185,9 @@ The following attributes are inherited from
   ``auxfile``
       File object for auxiliary file.
 
+Each auxiliary reader class must also identify an appropriate 
+:class:`~MDAnalysis.auxiliary.basae.AuxStep` with the `_Auxstep` attribute.
+ 
 
 Methods
 .......
@@ -292,7 +299,8 @@ An AuxStep instance holds the auxiliary data for the current step. It is
 updated whenever the a new auxiliary step is read.
 
 AuxStep classes are derived from the base class 
-:class:`~MDAnalysis.auxiliary.base.AuxStep`. 
+:class:`~MDAnalysis.auxiliary.base.AuxStep`. The appropriate AuxStep class for
+a given auxiliary reader is identified using the `_Auxstep` attribute.
 
 
 Attributes
