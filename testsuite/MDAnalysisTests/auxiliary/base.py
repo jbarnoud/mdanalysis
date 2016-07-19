@@ -121,11 +121,11 @@ class BaseAuxReaderTest(object):
         self.check_step(1)
 
     def test_go_to_step(self):
-        self.reader.go_to_step(3)
+        self.reader._go_to_step(3)
         self.check_step(3)
 
     def test_next_past_last_step_raises_StopIteration(self):
-        self.reader.go_to_step(self.reader.n_steps-1)
+        self.reader._go_to_step(self.reader.n_steps-1)
         assert_raises(StopIteration, self.reader.next)
 
     def test_iter(self):
@@ -179,7 +179,7 @@ class BaseAuxReaderTest(object):
 
     @raises(ValueError)
     def test_go_to_invalid_step_raises_ValueError(self):
-        self.reader.go_to_step(self.reader.n_steps)
+        self.reader._go_to_step(self.reader.n_steps)
 
     @raises(ValueError)
     def test_invalid_step_to_time_raises_ValueError(self):
