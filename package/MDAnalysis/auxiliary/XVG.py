@@ -28,6 +28,8 @@ XVG auxiliary reader --- :mod:`MDAnalysis.auxiliary.XVG`
 
 """
 
+from six.moves import range
+
 import os
 import numpy as np
 from . import base
@@ -169,7 +171,7 @@ class XVGReader(base.AuxReader):
         ValueError
             If step index not in valid range.
         """
-        if i not in range(self.n_steps):
+        if i >= self.n_steps:
             raise ValueError("Step index {0} is not valid for auxiliary "
                              "(num. steps {1})".format(i, self.n_steps))
         self.auxstep.step = i-1

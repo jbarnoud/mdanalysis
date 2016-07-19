@@ -30,6 +30,7 @@ Base classes for deriving all auxiliary data readers. See the API in :mod:`MDAna
 """
 
 import six
+from six.moves import range
 
 import os
 import numpy as np
@@ -386,7 +387,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         Note that the returned frame number may be out of range for the 
         trajectory.
         """
-        if step not in range(self.n_steps):
+        if step >= self.n_steps:
             return None 
         offset = ts.data.get('time_offset', 0)
         return int(math.floor((self.step_to_time(step)-offset+ts.dt/2.)/ts.dt))
@@ -548,7 +549,7 @@ class AuxReader(six.with_metaclass(_AuxReaderMeta)):
         ValueError
             When *i* not in valid range
         """
-        if i not in range(self.n_steps):
+        if i >= self.n_steps:
             raise ValueError("{0} is not a valid step index (total number of "
                              "steps is {1})".format(i, self.n_steps))
         if self.constant_dt:
@@ -720,7 +721,7 @@ class AuxFileReader(AuxReader):
         is reached. Overwrite if this can be done more efficiently.
         """
         ## could seek instead?
-        if i not in range(self.n_steps):
+        if i >= self.n_steps:
             raise ValueError("Step index {0} is not valid for auxiliary "
                              "(num. steps {1}!".format(i, self.n_steps))
         value = self.rewind()
