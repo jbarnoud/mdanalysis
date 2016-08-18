@@ -128,12 +128,8 @@ class TestTPR505(TPRBase):
 class TestTPR510(TPRBase):
     filename = TPR510
 
-class TPR2016(TPRBase):
-    topology = TPR2016
-
-
-class TestTPR2016(_TestTopology, TPR2016):
-    """Testing TPR version 110"""
+class TestTPR2016(TPRBase):
+    filename = TPR2016
 
 
 def _test_is_in_topology(name, elements, topology_path, topology_section):
